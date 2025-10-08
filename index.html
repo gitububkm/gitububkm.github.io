@@ -167,6 +167,42 @@
     .input:focus{outline:none;border-color:color-mix(in srgb,var(--accent) 50%,var(--border));box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 20%,transparent)}
     .shake{animation:shake .3s linear}
     @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+	/* ——— MOBILE FIX: контактный блок ——— */
+@media (max-width: 700px) {
+  /* компактнее сама карточка */
+  #contact .card { padding: 18px 14px; }
+
+  /* заголовок помягче по размеру */
+  #contact h2 { font-size: clamp(22px, 6.2vw, 30px); }
+
+  /* кнопки в один столбец и на всю ширину */
+  #contact .reveal-wrap .cta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+  #contact .reveal-wrap .btn {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  /* панелька Gmail на всю ширину контейнера */
+  #contact .reveal-panel {
+    width: 100%;
+    border-radius: 14px;
+  }
+
+  /* внутри панели элементы складываем в колонку */
+  #contact .panel-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+}
+
+
   </style>
 </head>
 <body>
