@@ -262,6 +262,98 @@
     gap: 10px;
   }
 }
+/* ===== Глобально: убрать горизонтальную прокрутку и тянучку вбок ===== */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  overflow-x: hidden;           /* не даём странице уезжать вбок */
+  overscroll-behavior-x: none;  /* запрет «подтягивания» по оси X */
+  touch-action: pan-y;          /* разрешаем только вертикальный скролл */
+  max-width: 100vw;             /* страховка от расширений */
+}
+
+/* Иногда широкие трансформации могут вылезти — подрежем всё по краям в мобайле */
+@media (max-width: 700px) {
+  body { position: relative; }
+  .hero, .container, .nav { max-width: 100vw; overflow-x: hidden; }
+}
+
+/* ===== NAVBAR: аккуратно адаптируем кнопки и не даём им вылезать ===== */
+@media (max-width: 700px) {
+  .nav .wrap {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding: 8px 0 10px; /* добавим воздуха, фон шапки покрывает 2 строки */
+  }
+
+  .nav .logo { order: 1; width: 100%; text-align: center; }
+
+  .nav .links {
+    order: 2;
+    width: 100%;
+    display: flex !important;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .nav .actions {
+    order: 3;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  /* делаем кнопки шапки немного меньше и не позволяём им обрезаться */
+  .nav .actions .btn {
+    padding: 9px 12px;
+    font-size: 14px;
+    line-height: 1.1;
+    white-space: nowrap;
+    min-width: 128px;  /* компактнее, чем раньше */
+  }
+}
+
+/* на очень узких — пусть тянутся равномерно, чтобы точно не вылезали */
+@media (max-width: 360px) {
+  .nav .actions .btn {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+}
+
+/* ===== CONTACT: одинаковый размер кнопок на телефоне ===== */
+@media (max-width: 700px) {
+  /* кладём действия в колонку и растягиваем на всю ширину карточки */
+  #contact .reveal-wrap .cta {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  /* ВСЕ три кнопки — одинаковая ширина/высота */
+  #contact .reveal-wrap .btn,
+  #contact .reveal-wrap .btn.secondary {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;    /* одинаковая высота */
+    padding: 12px 16px;  /* одинаковые отступы */
+    font-size: 16px;
+    justify-content: center;
+    white-space: nowrap; /* чтобы текст не переносился и высота не прыгала */
+  }
+
+  /* панель Gmail на всю ширину, внутренности — в колонку и 100% */
+  #contact .reveal-panel { width: 100%; border-radius: 14px; }
+  #contact .panel-inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+}
 
 
   </style>
@@ -388,7 +480,7 @@
       <div><strong>gitububkm</strong><br><span class="muted">© <span id="y"></span> Все права защищены.</span></div>
       <div><a href="#features">Проекты</a><br><a href="#contact">Контакты</a></div>
       <div><span class="muted">Сделано с заботой о деталях.</span></div>
-      <div><span class="muted">mk IX</span></div>
+      <div><span class="muted">mk XI</span></div>
     </div>
   </footer>
 
