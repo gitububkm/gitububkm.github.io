@@ -1,0 +1,22 @@
+# 0) Замените USER на ваш логин GitHub
+$USER = "ВАШ_ЛОГИН_GITHUB"
+
+# 1) Клонируем
+git clone https://github.com/$USER/$USER.github.io
+cd "$USER.github.io"
+
+# 2) Создаём простую главную страницу
+@"
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<title>Мой сайт на GitHub Pages</title>
+<h1>Привет!</h1>
+<p>Это мой сайт на <b>$USER.github.io</b>.</p>
+</html>
+"@ | Out-File -Encoding utf8 -FilePath index.html
+
+# 3) Коммит и пуш
+git add .
+git commit -m "Первый коммит: index.html"
+git push
