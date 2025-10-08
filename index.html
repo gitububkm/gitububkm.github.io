@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>gitububkm</title>
   <meta name="description" content="Минималистичный сайт: крупная типографика, чистые блоки, плавные анимации." />
   <link rel="icon" href="assets/favicon.svg" />
@@ -471,6 +471,85 @@ html, body {
   /* «подсмотр»: слегка выглядывает при небольшом скролле вверх */
   .nav.nav--peek   { transform: translateY(-55%); }
 }
+/* ===== SAFE-AREA + POLISHED FULL-HEIGHT ===== */
+:root{
+  /* переменные безопасных зон (работают на iOS/некоторых Android) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+}
+
+/* реальная высота экрана без «скачков» адресной строки Safari */
+html { height: -webkit-fill-available; }
+body {
+  min-height: 100dvh;          /* новые «динамические» вьюпорт-юниты */
+  min-height: 100svh;          /* fallback для ряда браузеров */
+  height: -webkit-fill-available;
+  padding-left: max(var(--safe-left), 0px);
+  padding-right: max(var(--safe-right), 0px);
+  /* уже есть запрет горизонтального скролла — оставляем */
+}
+
+/* ===== NAVBAR: учитываем «островок/чёлку», шапка не обрезается ===== */
+.nav {
+  padding-top: calc(8px + var(--safe-top));   /* пространство под камеру */
+}
+.nav .wrap {
+  /* убираем жёсткую высоту, если где-то она сохранилась */
+  height: auto;
+  min-height: 56px;
+}
+
+/* тонкая «линза» под островком — визуально «обыгрывает» камеру (только на телефонах) */
+@media (max-width: 700px) {
+  .nav::before{
+    content:"";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: calc(var(--safe-top) + 6px);
+    pointer-events: none;
+    /* мягкая виньетка вокруг динамического островка/чёлки */
+    background:
+      radial-gradient(220px 16px at 50% calc(50% + 2px), rgba(0,0,0,.08), transparent 70%);
+  }
+}
+
+/* ===== HERO: заголовок «обходит» камеру за счёт верхнего отступа ===== */
+.hero{
+  /* базовый у тебя есть — добавим safe-top */
+  padding-top: calc(96px + var(--safe-top));
+}
+
+/* декоративное «обыгрывание» камеры в Hero: лёгкий блик сверху по центру */
+@media (max-width: 700px) {
+  .hero::before{
+    content:"";
+    position:absolute; left:0; right:0;
+    top: 0;
+    height: calc(var(--safe-top) + 18px);
+    pointer-events:none;
+    background:
+      radial-gradient(160px 14px at 50% 100%, rgba(255,255,255,.10), transparent 70%);
+    mix-blend-mode: overlay;
+  }
+}
+
+/* ===== FOOTER: не упирается в home-indicator на iPhone ===== */
+footer { padding-bottom: calc(60px + var(--safe-bottom)); }
+
+/* ===== CONTACT card: тоже учитывает нижнюю безопасную зону на очень узких ===== */
+@media (max-width: 480px){
+  #contact .card { padding-bottom: calc(24px + var(--safe-bottom)); }
+}
+
+/* ===== EXTRA: чтобы ничто не выезжало за экран по X даже при трансформациях ===== */
+.container, .hero, .nav { max-width: 100vw; overflow-x: clip; }
+
+/* На ультра-узких телефонах ещё немного уменьшим нав-ссылки, не трогая GitHub/Написать */
+@media (max-width: 360px){
+  .nav .links a { font-size: 13px; padding: 6px 10px; }
+}
 
 
   </style>
@@ -597,7 +676,7 @@ html, body {
       <div><strong>gitububkm</strong><br><span class="muted">© <span id="y"></span> Все права защищены.</span></div>
       <div><a href="#features">Проекты</a><br><a href="#contact">Контакты</a></div>
       <div><span class="muted">Сделано с заботой о деталях.</span></div>
-      <div><span class="muted">mk XIV</span></div>
+      <div><span class="muted">mk XV</span></div>
     </div>
   </footer>
 
