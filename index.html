@@ -354,6 +354,58 @@ html, body {
     gap: 10px;
   }
 }
+/* ——— NAVBAR mobile fix: больше не режется и выглядит аккуратно ——— */
+@media (max-width: 700px) {
+  /* контейнер навигации растёт по контенту */
+  .nav .wrap {
+    height: auto;        /* ключ: убираем фикс 56px */
+    min-height: 56px;    /* чтобы не схлопывалось */
+    padding: 8px 16px 10px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  /* три строки: логотип, ссылки, действия */
+  .nav .logo { order: 1; width: 100%; text-align: center; }
+
+  .nav .links {
+    order: 2;
+    width: 100%;
+    display: flex !important;
+    justify-content: center;
+    gap: 10px;
+  }
+  .nav .links a {
+    padding: 6px 10px;      /* компактнее */
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+  }
+
+  .nav .actions {
+    order: 3;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+  }
+  .nav .actions .btn {
+    padding: 9px 12px;
+    font-size: 14px;
+    line-height: 1.2;
+    white-space: nowrap;
+    min-width: 120px;       /* ещё капельку меньше */
+  }
+}
+
+/* очень узкие устройства — кнопки тянутся равномерно и точно не вылезают */
+@media (max-width: 360px) {
+  .nav .actions .btn {
+    min-width: 0;
+    flex: 1 1 0;
+  }
+}
 
 
   </style>
@@ -480,7 +532,7 @@ html, body {
       <div><strong>gitububkm</strong><br><span class="muted">© <span id="y"></span> Все права защищены.</span></div>
       <div><a href="#features">Проекты</a><br><a href="#contact">Контакты</a></div>
       <div><span class="muted">Сделано с заботой о деталях.</span></div>
-      <div><span class="muted">mk XI</span></div>
+      <div><span class="muted">mk XII</span></div>
     </div>
   </footer>
 
