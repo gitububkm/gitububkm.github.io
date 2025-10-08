@@ -40,7 +40,7 @@ cd gitububkm.github.io
 python -m http.server 8000
 ```
 
-```plaintext
 После этого открой в браузере:
+```plaintext
 http://localhost:8000
 ```
