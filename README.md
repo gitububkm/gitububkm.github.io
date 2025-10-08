@@ -25,22 +25,22 @@
 
 ---
 
-## Как запустить локально
+# Как запустить локально
 
 Если хочешь протестировать сайт у себя:
 
-# Клонировать репозиторий
+## Клонировать репозиторий
 ```plaintext
 git clone https://github.com/gitububkm/gitububkm.github.io.git
 cd gitububkm.github.io
 ```
 
-# Запустить локальный сервер (Python 3)
+## Запустить локальный сервер (Python 3)
 ```plaintext
 python -m http.server 8000
 ```
 
-После этого открой в браузере:
+## После этого открой в браузере:
 ```plaintext
 http://localhost:8000
 ```
