@@ -108,14 +108,24 @@
     .card .inner { padding: 32px; text-align: center; }
     .card h2 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.1; margin: 0 0 8px; }
     .card p  { margin: 0 0 16px; color: var(--muted); }
+
+    /* >>> ПРАВКА: подложка берёт доминирующий цвет изображения */
     .card .img {
-      width: clamp(220px, 40vw, 360px); aspect-ratio: 4 / 3; border-radius: 28px; margin: 16px auto 12px;
-      background:
-        radial-gradient(400px 200px at 20% 20%, #61a6ff33, transparent),
-        linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
-      background-position: center; background-repeat: no-repeat; background-size: contain;
-      border: 1px solid var(--border); box-shadow: 0 20px 50px -24px rgba(0,0,0,.35); overflow: hidden;
-      transform: translateZ(0); transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+      width: clamp(220px, 40vw, 360px);
+      aspect-ratio: 4 / 3;
+      border-radius: 28px;
+      margin: 16px auto 12px;
+
+      background-color: var(--img-bg, var(--card)); /* ключевая строка */
+
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 50px -24px rgba(0,0,0,.35);
+      overflow: hidden;
+      transform: translateZ(0);
+      transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+
+      /* убираем прежние градиенты, чтобы не мешали подложке */
+      background-image: none;
     }
     .card:hover .img { transform: translateY(-6px) scale(1.02); }
 
@@ -267,28 +277,24 @@
 *::after { box-sizing: border-box; }
 
 html, body {
-  overflow-x: hidden;           /* не даём странице уезжать вбок */
-  overscroll-behavior-x: none;  /* запрет «подтягивания» по оси X */
-  touch-action: pan-y;          /* разрешаем только вертикальный скролл */
-  max-width: 100vw;             /* страховка от расширений */
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
+  max-width: 100vw;
 }
 
-/* Иногда широкие трансформации могут вылезти — подрежем всё по краям в мобайле */
 @media (max-width: 700px) {
   body { position: relative; }
   .hero, .container, .nav { max-width: 100vw; overflow-x: hidden; }
 }
 
-/* ===== NAVBAR: аккуратно адаптируем кнопки и не даём им вылезать ===== */
 @media (max-width: 700px) {
   .nav .wrap {
     flex-wrap: wrap;
     row-gap: 8px;
-    padding: 8px 0 10px; /* добавим воздуха, фон шапки покрывает 2 строки */
+    padding: 8px 0 10px;
   }
-
   .nav .logo { order: 1; width: 100%; text-align: center; }
-
   .nav .links {
     order: 2;
     width: 100%;
@@ -296,7 +302,6 @@ html, body {
     justify-content: center;
     gap: 12px;
   }
-
   .nav .actions {
     order: 3;
     width: 100%;
@@ -304,18 +309,15 @@ html, body {
     justify-content: center;
     gap: 8px;
   }
-
-  /* делаем кнопки шапки немного меньше и не позволяём им обрезаться */
   .nav .actions .btn {
     padding: 9px 12px;
     font-size: 14px;
     line-height: 1.1;
     white-space: nowrap;
-    min-width: 128px;  /* компактнее, чем раньше */
+    min-width: 128px;
   }
 }
 
-/* на очень узких — пусть тянутся равномерно, чтобы точно не вылезали */
 @media (max-width: 360px) {
   .nav .actions .btn {
     min-width: 0;
@@ -323,29 +325,23 @@ html, body {
   }
 }
 
-/* ===== CONTACT: одинаковый размер кнопок на телефоне ===== */
 @media (max-width: 700px) {
-  /* кладём действия в колонку и растягиваем на всю ширину карточки */
   #contact .reveal-wrap .cta {
     display: flex;
     flex-direction: column;
     width: 100%;
     gap: 10px;
   }
-
-  /* ВСЕ три кнопки — одинаковая ширина/высота */
   #contact .reveal-wrap .btn,
   #contact .reveal-wrap .btn.secondary {
     width: 100%;
     min-width: 0;
-    min-height: 48px;    /* одинаковая высота */
-    padding: 12px 16px;  /* одинаковые отступы */
+    min-height: 48px;
+    padding: 12px 16px;
     font-size: 16px;
     justify-content: center;
-    white-space: nowrap; /* чтобы текст не переносился и высота не прыгала */
+    white-space: nowrap;
   }
-
-  /* панель Gmail на всю ширину, внутренности — в колонку и 100% */
   #contact .reveal-panel { width: 100%; border-radius: 14px; }
   #contact .panel-inner {
     flex-direction: column;
@@ -353,61 +349,8 @@ html, body {
     gap: 10px;
   }
 }
-/* ——— NAVBAR mobile fix: больше не режется и выглядит аккуратно ——— */
-@media (max-width: 700px) {
-  /* контейнер навигации растёт по контенту */
-  .nav .wrap {
-    height: auto;        /* ключ: убираем фикс 56px */
-    min-height: 56px;    /* чтобы не схлопывалось */
-    padding: 8px 16px 10px;
-    flex-wrap: wrap;
-    row-gap: 8px;
-  }
 
-  /* три строки: логотип, ссылки, действия */
-  .nav .logo { order: 1; width: 100%; text-align: center; }
-
-  .nav .links {
-    order: 2;
-    width: 100%;
-    display: flex !important;
-    justify-content: center;
-    gap: 10px;
-  }
-  .nav .links a {
-    padding: 6px 10px;      /* компактнее */
-    font-size: 14px;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--bg) 60%, transparent);
-  }
-
-  .nav .actions {
-    order: 3;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-  }
-  .nav .actions .btn {
-    padding: 9px 12px;
-    font-size: 14px;
-    line-height: 1.2;
-    white-space: nowrap;
-    min-width: 120px;       /* ещё капельку меньше */
-  }
-}
-
-/* очень узкие устройства — кнопки тянутся равномерно и точно не вылезают */
-@media (max-width: 360px) {
-  .nav .actions .btn {
-    min-width: 0;
-    flex: 1 1 0;
-  }
-}
-/* ===== CONTACT (desktop/tablet): три одинаковые кнопки в ряд ===== */
 @media (min-width: 701px) {
-  /* кладём кнопки в сетку 3х1 с равными колонками */
   #contact .reveal-wrap .cta {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -415,92 +358,78 @@ html, body {
     align-items: stretch;
     justify-items: stretch;
   }
-
-  /* одинаковая ширина/высота и центрирование текста у всех трёх */
   #contact .reveal-wrap .btn,
   #contact .reveal-wrap .btn.secondary {
     width: 100%;
     min-width: 0;
-    min-height: 48px;   /* одинаковая высота, как на мобиле */
-    padding: 12px 16px; /* одинаковые отступы */
+    min-height: 48px;
+    padding: 12px 16px;
     font-size: 16px;
     justify-content: center;
     white-space: nowrap;
   }
-
-  /* панель Gmail — растягиваем по ширине карточки */
   #contact .reveal-panel {
     width: 100%;
     max-width: none;
     border-radius: 16px;
   }
-
-  /* внутри панели на широких — в одну строку, если помещается */
   #contact .panel-inner {
     flex-direction: row;
     align-items: center;
     gap: 12px;
   }
 }
-/* ——— NAV LINKS mobile: ровные «пилюли» и строго по центру текста ——— */
+
 @media (max-width: 700px) {
   .nav .links { gap: 10px; }
-
   .nav .links a {
-    display: inline-flex;          /* центрирование по обеим осям */
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 8px 12px;
-    min-height: 36px;              /* одинаковая высота */
-    line-height: 1.2;              /* без «вылазящего» текста */
+    min-height: 36px;
+    line-height: 1.2;
     text-align: center;
-    white-space: nowrap;           /* не переносим слова */
-    border-radius: 999px;          /* аккуратная «пилюля» */
-    /* остальное (цвет/бордер/фон) оставляем как у тебя */
+    white-space: nowrap;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 60%, transparent);
+    border: 1px solid var(--border);
   }
 }
-/* ——— NAVBAR: авто-скрытие на мобильных ——— */
+
 @media (max-width: 700px) {
   .nav {
     transition: transform .28s ease, background-color .2s ease;
     will-change: transform;
   }
-  /* полностью скрыта */
   .nav.nav--hidden { transform: translateY(-100%); }
-  /* «подсмотр»: слегка выглядывает при небольшом скролле вверх */
   .nav.nav--peek   { transform: translateY(-55%); }
 }
-/* ===== SAFE-AREA + POLISHED FULL-HEIGHT ===== */
+
 :root{
-  /* переменные безопасных зон (работают на iOS/некоторых Android) */
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
 }
 
-/* реальная высота экрана без «скачков» адресной строки Safari */
 html { height: -webkit-fill-available; }
 body {
-  min-height: 100dvh;          /* новые «динамические» вьюпорт-юниты */
-  min-height: 100svh;          /* fallback для ряда браузеров */
+  min-height: 100dvh;
+  min-height: 100svh;
   height: -webkit-fill-available;
   padding-left: max(var(--safe-left), 0px);
   padding-right: max(var(--safe-right), 0px);
-  /* уже есть запрет горизонтального скролла — оставляем */
 }
 
-/* ===== NAVBAR: учитываем «островок/чёлку», шапка не обрезается ===== */
 .nav {
-  padding-top: calc(8px + var(--safe-top));   /* пространство под камеру */
+  padding-top: calc(8px + var(--safe-top));
 }
 .nav .wrap {
-  /* убираем жёсткую высоту, если где-то она сохранилась */
   height: auto;
   min-height: 56px;
 }
 
-/* тонкая «линза» под островком — визуально «обыгрывает» камеру (только на телефонах) */
 @media (max-width: 700px) {
   .nav::before{
     content:"";
@@ -508,19 +437,15 @@ body {
     top: 0; left: 0; right: 0;
     height: calc(var(--safe-top) + 6px);
     pointer-events: none;
-    /* мягкая виньетка вокруг динамического островка/чёлки */
     background:
       radial-gradient(220px 16px at 50% calc(50% + 2px), rgba(0,0,0,.08), transparent 70%);
   }
 }
 
-/* ===== HERO: заголовок «обходит» камеру за счёт верхнего отступа ===== */
 .hero{
-  /* базовый у тебя есть — добавим safe-top */
   padding-top: calc(96px + var(--safe-top));
 }
 
-/* декоративное «обыгрывание» камеры в Hero: лёгкий блик сверху по центру */
 @media (max-width: 700px) {
   .hero::before{
     content:"";
@@ -534,23 +459,17 @@ body {
   }
 }
 
-/* ===== FOOTER: не упирается в home-indicator на iPhone ===== */
 footer { padding-bottom: calc(60px + var(--safe-bottom)); }
 
-/* ===== CONTACT card: тоже учитывает нижнюю безопасную зону на очень узких ===== */
 @media (max-width: 480px){
   #contact .card { padding-bottom: calc(24px + var(--safe-bottom)); }
 }
 
-/* ===== EXTRA: чтобы ничто не выезжало за экран по X даже при трансформациях ===== */
 .container, .hero, .nav { max-width: 100vw; overflow-x: clip; }
 
-/* На ультра-узких телефонах ещё немного уменьшим нав-ссылки, не трогая GitHub/Написать */
 @media (max-width: 360px){
   .nav .links a { font-size: 13px; padding: 6px 10px; }
 }
-
-
   </style>
 </head>
 <body>
@@ -717,20 +636,50 @@ footer { padding-bottom: calc(60px + var(--safe-bottom)); }
       });
     });
 
-    // Автоподстановка изображений
-    (function(){
+    /* >>> ПРАВКА: автоподстановка изображений + фон из доминирующего цвета */
+    (function () {
       const tryExts = ['webp','jpg','png','jpeg'];
+
+      function dominantColor(imgEl) {
+        try {
+          const c = document.createElement('canvas');
+          const ctx = c.getContext('2d', { willReadFrequently: true });
+          const w = c.width = 24, h = c.height = 24;
+          ctx.drawImage(imgEl, 0, 0, w, h);
+          const { data } = ctx.getImageData(0, 0, w, h);
+          let r=0,g=0,b=0,n=0;
+          for (let i=0;i<data.length;i+=4) {
+            const R=data[i], G=data[i+1], B=data[i+2], A=data[i+3];
+            if (A<200) continue;
+            const max=Math.max(R,G,B), min=Math.min(R,G,B);
+            if (max<12) continue;
+            if (min>245) continue;
+            r+=R; g+=G; b+=B; n++;
+          }
+          if (!n) return [30,30,30];
+          return [Math.round(r/n), Math.round(g/n), Math.round(b/n)];
+        } catch { return [30,30,30]; }
+      }
+
       document.querySelectorAll('.card .img').forEach(el => {
         const nameAttr = el.getAttribute('data-proj');
         const heading = el.closest('.card')?.querySelector('h2')?.textContent?.trim();
         const base = (nameAttr || heading || '').trim();
         if(!base) return;
+
         (function loadWithExt(i){
           if(i>=tryExts.length) return;
-          const url = `assets/${base}.${tryExts[i]}`;
+          const url = `assets/${encodeURIComponent(base)}.${tryExts[i]}`;
           const img = new Image();
+          img.crossOrigin = 'anonymous';
           img.onload = () => {
-            el.style.background = `center / contain no-repeat url('${url}')`;
+            const [r,g,b] = dominantColor(img);
+            const bg = `rgb(${r}, ${g}, ${b})`;
+            el.style.setProperty('--img-bg', bg);
+            el.style.background = `
+              center / contain no-repeat url("${url}"),
+              linear-gradient(${bg}, ${bg})
+            `.trim();
             el.setAttribute('aria-label', base);
           };
           img.onerror = () => loadWithExt(i+1);
@@ -781,7 +730,6 @@ footer { padding-bottom: calc(60px + var(--safe-bottom)); }
       const cancel  = document.getElementById('secretCancel');
       const panel   = document.getElementById('secretPanel');
 
-      // Обфусцированная функция: «случайные» вычисления по коду, но итог = 1
       function computePassword(){
         const src = document.documentElement.innerHTML;
         const digits = Array.from(src).filter(ch => ch >= '0' && ch <= '9').map(ch => ch.charCodeAt(0));
@@ -825,50 +773,49 @@ footer { padding-bottom: calc(60px + var(--safe-bottom)); }
       if(cancel)  cancel.addEventListener('click', closeModal);
       if(modal)   modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
     })();
-// Авто-скрытие шапки на телефоне: скрываем при скролле вниз,
-// чуть приоткрываем при небольшом скролле вверх, полностью показываем при большом.
-(function () {
-  const nav = document.querySelector('.nav');
-  if (!nav) return;
 
-  let lastY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  let downAcc = 0, upAcc = 0;
+    // Авто-скрытие шапки на телефоне
+    (function () {
+      const nav = document.querySelector('.nav');
+      if (!nav) return;
 
-  const HIDE_AFTER = 16;  // сколько пикселей вниз, чтобы спрятать
-  const PEEK_AFTER = 8;   // сколько пикселей вверх, чтобы «подсмотреть»
-  const SHOW_AFTER = 70;  // сколько пикселей вверх, чтобы показать полностью
+      let lastY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      let downAcc = 0, upAcc = 0;
 
-  function onScroll() {
-    const y = window.pageYOffset || document.documentElement.scrollTop || 0;
-    const dy = y - lastY;
-    lastY = y < 0 ? 0 : y;
+      const HIDE_AFTER = 16;
+      const PEEK_AFTER = 8;
+      const SHOW_AFTER = 70;
 
-    // в самом верху всегда показываем полностью
-    if (y <= 0) {
-      nav.classList.remove('nav--hidden', 'nav--peek');
-      downAcc = upAcc = 0;
-      return;
-    }
+      function onScroll() {
+        const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+        const dy = y - lastY;
+        lastY = y < 0 ? 0 : y;
 
-    if (dy > 0) { // скролл вниз
-      downAcc += dy; upAcc = 0;
-      if (downAcc > HIDE_AFTER) {
-        nav.classList.add('nav--hidden');
-        nav.classList.remove('nav--peek');
+        if (y <= 0) {
+          nav.classList.remove('nav--hidden', 'nav--peek');
+          downAcc = upAcc = 0;
+          return;
+        }
+
+        if (dy > 0) {
+          downAcc += dy; upAcc = 0;
+          if (downAcc > HIDE_AFTER) {
+            nav.classList.add('nav--hidden');
+            nav.classList.remove('nav--peek');
+          }
+        } else if (dy < 0) {
+          upAcc += -dy; downAcc = 0;
+          if (upAcc > SHOW_AFTER) {
+            nav.classList.remove('nav--hidden', 'nav--peek');
+          } else if (upAcc > PEEK_AFTER) {
+            nav.classList.remove('nav--hidden');
+            nav.classList.add('nav--peek');
+          }
+        }
       }
-    } else if (dy < 0) { // скролл вверх
-      upAcc += -dy; downAcc = 0;
-      if (upAcc > SHOW_AFTER) {
-        nav.classList.remove('nav--hidden', 'nav--peek'); // полностью показать
-      } else if (upAcc > PEEK_AFTER) {
-        nav.classList.remove('nav--hidden');
-        nav.classList.add('nav--peek'); // немного выглянуть
-      }
-    }
-  }
 
-  window.addEventListener('scroll', onScroll, { passive: true });
-})();
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
 
   </script>
 </body>
