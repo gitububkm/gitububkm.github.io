@@ -21,6 +21,7 @@
 ├── scripts/          # JS-файлы и утилиты
 ├── styles/           # Стили сайта (CSS)
 └── README.md         # Это описание проекта
+```
 
 ---
 
@@ -32,10 +33,14 @@
 ```plaintext
 git clone https://github.com/gitububkm/gitububkm.github.io.git
 cd gitububkm.github.io
+```
 
 # Запустить локальный сервер (Python 3)
 ```plaintext
 python -m http.server 8000
+```
 
+```plaintext
 После этого открой в браузере:
 http://localhost:8000
+```
