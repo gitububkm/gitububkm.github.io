@@ -460,6 +460,17 @@ html, body {
     /* остальное (цвет/бордер/фон) оставляем как у тебя */
   }
 }
+/* ——— NAVBAR: авто-скрытие на мобильных ——— */
+@media (max-width: 700px) {
+  .nav {
+    transition: transform .28s ease, background-color .2s ease;
+    will-change: transform;
+  }
+  /* полностью скрыта */
+  .nav.nav--hidden { transform: translateY(-100%); }
+  /* «подсмотр»: слегка выглядывает при небольшом скролле вверх */
+  .nav.nav--peek   { transform: translateY(-55%); }
+}
 
 
   </style>
@@ -738,6 +749,51 @@ html, body {
       if(cancel)  cancel.addEventListener('click', closeModal);
       if(modal)   modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
     })();
+// Авто-скрытие шапки на телефоне: скрываем при скролле вниз,
+// чуть приоткрываем при небольшом скролле вверх, полностью показываем при большом.
+(function () {
+  const nav = document.querySelector('.nav');
+  if (!nav) return;
+
+  let lastY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  let downAcc = 0, upAcc = 0;
+
+  const HIDE_AFTER = 16;  // сколько пикселей вниз, чтобы спрятать
+  const PEEK_AFTER = 8;   // сколько пикселей вверх, чтобы «подсмотреть»
+  const SHOW_AFTER = 70;  // сколько пикселей вверх, чтобы показать полностью
+
+  function onScroll() {
+    const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    const dy = y - lastY;
+    lastY = y < 0 ? 0 : y;
+
+    // в самом верху всегда показываем полностью
+    if (y <= 0) {
+      nav.classList.remove('nav--hidden', 'nav--peek');
+      downAcc = upAcc = 0;
+      return;
+    }
+
+    if (dy > 0) { // скролл вниз
+      downAcc += dy; upAcc = 0;
+      if (downAcc > HIDE_AFTER) {
+        nav.classList.add('nav--hidden');
+        nav.classList.remove('nav--peek');
+      }
+    } else if (dy < 0) { // скролл вверх
+      upAcc += -dy; downAcc = 0;
+      if (upAcc > SHOW_AFTER) {
+        nav.classList.remove('nav--hidden', 'nav--peek'); // полностью показать
+      } else if (upAcc > PEEK_AFTER) {
+        nav.classList.remove('nav--hidden');
+        nav.classList.add('nav--peek'); // немного выглянуть
+      }
+    }
+  }
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
+
   </script>
 </body>
 </html>
