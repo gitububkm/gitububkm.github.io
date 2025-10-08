@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gitububkm — красиво как у Apple</title>
-  <meta name="description" content="Минималистичный сайт, крупная типографика, чистые блоки, плавные анимации." />
+  <meta name="description" content="Минималистичный сайт в стиле Apple: крупная типографика, чистые блоки, плавные анимации." />
   <link rel="icon" href="assets/favicon.svg" />
   <style>
     /* ———————————————————————————————————
@@ -125,14 +125,21 @@
     .card h2 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.1; margin: 0 0 8px; }
     .card p { margin: 0 0 16px; color: var(--muted); }
     .card .img {
-      width: clamp(180px, 40vw, 320px); aspect-ratio: 4/3; border-radius: 20px;
+      width: clamp(220px, 40vw, 360px);
+      aspect-ratio: 4 / 3;
+      border-radius: 28px;
+      margin: 16px auto 12px;
       background:
         radial-gradient(400px 200px at 20% 20%, #61a6ff33, transparent),
         linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
-      filter: saturate(1.1);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain; /* принудительно без обрезки */
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 50px -24px rgba(0,0,0,.35);
+      overflow: hidden; /* корректное скругление фона */
       transform: translateZ(0);
       transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
-      box-shadow: 0 40px 80px -40px rgba(0,0,0,.35);
     }
     .card:hover .img { transform: translateY(-6px) scale(1.02); }
 
@@ -184,7 +191,7 @@
   <!-- Hero -->
   <header class="hero container center">
     <h1 class="fade-up">Красиво. Быстро. Минимально.</h1>
-    <p class="muted fade-up" style="transition-delay:.06s">Чистая типографика, фокус на продукте и детали, которые чувствуются.</p>
+    <p class="muted fade-up" style="transition-delay:.06s">Сайт в стиле Apple: чистая типографика, фокус на продукте и детали, которые чувствуются.</p>
     <div class="cta fade-up" style="transition-delay:.12s">
       <a class="btn" href="https://github.com/gitububkm/Personal_Projects_Private" target="_blank" rel="noreferrer">Смотреть проекты</a>
       <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">Узнать больше</a>
