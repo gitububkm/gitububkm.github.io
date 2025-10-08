@@ -1,8 +1,311 @@
 <!doctype html>
 <html lang="ru">
-<meta charset="utf-8">
-<title>Мой сайт на GitHub Pages</title>
-<h1>Привет!</h1>
-<p>Это мой сайт на <b>gitububkm.github.io</b>.</p>
-</html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gitububkm — красиво как у Apple</title>
+  <meta name="description" content="Минималистичный сайт в стиле Apple: крупная типографика, чистые блоки, плавные анимации." />
+  <link rel="icon" href="assets/favicon.svg" />
+  <style>
+    /* ———————————————————————————————————
+       БАЗА (системные шрифты как у Apple)
+    ———————————————————————————————————— */
+    :root {
+      --bg: #ffffff;
+      --fg: #0a0a0a;
+      --muted: #6e6e73; /* оттенок серого, близкий к apple.com */
+      --card: #f5f5f7;
+      --border: #e5e5ea;
+      --accent: #0071e3; /* синий Apple */
+      --accent-press: #0077ed;
+      --radius: 24px;
+      --maxw: 1200px;
+      --shadow: 0 1px 2px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.08);
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --fg: #f5f5f7;
+        --muted: #a1a1a6;
+        --card: #111113;
+        --border: #1f1f22;
+        --shadow: 0 1px 2px rgba(0,0,0,.5), 0 8px 24px rgba(0,0,0,.6);
+      }
+    }
 
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* ———————————————————————————————————
+       КОНТЕЙНЕРЫ И УТИЛИТЫ
+    ———————————————————————————————————— */
+    .container { width: 100%; max-width: var(--maxw); margin: 0 auto; padding: 0 20px; }
+    .center { text-align: center; }
+    .muted { color: var(--muted); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      gap: 8px; padding: 12px 20px; border-radius: 999px;
+      background: var(--accent); color: #fff; text-decoration: none; font-weight: 600;
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,.12), 0 6px 16px rgba(0,113,227,.25);
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: inset 0 -1px 0 rgba(0,0,0,.12), 0 10px 28px rgba(0,113,227,.35); }
+    .btn:active { transform: translateY(0); background: var(--accent-press); }
+    .btn.secondary { background: transparent; color: var(--accent); box-shadow: none; border: 1px solid var(--border); }
+    .btn.secondary:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+    /* ———————————————————————————————————
+       СТЕКЛЯННАЯ НАВИГАЦИЯ
+    ———————————————————————————————————— */
+    .nav {
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: saturate(180%) blur(14px);
+      background: color-mix(in srgb, var(--bg) 65%, transparent);
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+    }
+    .nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 56px; }
+    .logo { font-weight: 700; letter-spacing: .2px; }
+    .nav a { color: inherit; text-decoration: none; font-weight: 500; }
+    .nav .links { display: none; gap: 20px; }
+    .nav .actions { display: flex; gap: 10px; }
+    @media (min-width: 900px) {
+      .nav .links { display: flex; }
+    }
+
+    /* ———————————————————————————————————
+       HERO-БЛОК
+    ———————————————————————————————————— */
+    .hero { position: relative; padding: 96px 0 40px; overflow: hidden; }
+    .hero h1 {
+      font-size: clamp(40px, 7vw, 72px);
+      line-height: 1.05; letter-spacing: -.5px; margin: 0 0 16px;
+      font-weight: 800;
+    }
+    .hero p { font-size: clamp(16px, 2.2vw, 20px); margin: 0 auto 28px; max-width: 720px; }
+    .hero .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+    /* Иллюстрация-"девайс" */
+    .device {
+      margin: 48px auto 0; width: min(100%, 940px); aspect-ratio: 16/9; border-radius: calc(var(--radius) * 1.2);
+      background: radial-gradient(1200px 600px at 80% 0%, #61a6ff40, transparent),
+                  radial-gradient(1200px 600px at 0% 100%, #ff7ab640, transparent),
+                  linear-gradient(180deg, var(--card), color-mix(in srgb, var(--card) 60%, transparent));
+      box-shadow: var(--shadow);
+      position: relative; overflow: hidden;
+    }
+    .bezel { position: absolute; inset: 22px; border-radius: calc(var(--radius) * .8); background: #000; overflow: hidden; }
+    .screen {
+      position: absolute; inset: 0; background:
+        radial-gradient(1200px 800px at 50% -20%, rgba(255,255,255,.18), transparent),
+        conic-gradient(from 200deg at 50% 50%, #4f46e5, #06b6d4, #22c55e, #f59e0b, #ef4444, #8b5cf6, #4f46e5);
+      opacity: .9; animation: hue 12s linear infinite;
+    }
+    @keyframes hue { to { filter: hue-rotate(360deg); } }
+
+    /* ———————————————————————————————————
+       КАРТОЧКИ «ПРОДУКТОВ» (как секции на apple.com)
+    ———————————————————————————————————— */
+    .grid { display: grid; gap: 20px; padding: 60px 0; }
+    @media (min-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .card {
+      position: relative; border-radius: var(--radius); overflow: hidden; background: var(--card);
+      border: 1px solid var(--border); min-height: 360px; display: grid; place-items: center;
+      box-shadow: var(--shadow); isolation: isolate;
+    }
+    .card .inner { padding: 32px; text-align: center; }
+    .card h2 { font-size: clamp(28px, 4.2vw, 40px); line-height: 1.1; margin: 0 0 8px; }
+    .card p { margin: 0 0 16px; color: var(--muted); }
+    .card .img {
+      width: clamp(180px, 40vw, 320px); aspect-ratio: 4/3; border-radius: 20px;
+      background:
+        radial-gradient(400px 200px at 20% 20%, #61a6ff33, transparent),
+        linear-gradient(135deg, #0ea5e9 0%, #8b5cf6 100%);
+      filter: saturate(1.1);
+      transform: translateZ(0);
+      transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
+      box-shadow: 0 40px 80px -40px rgba(0,0,0,.35);
+    }
+    .card:hover .img { transform: translateY(-6px) scale(1.02); }
+
+    /* Вариации фона для карточек */
+    .card.dark { background: #000; color: #fff; }
+    .card.dark p { color: #c7c7cc; }
+    .card.gradient { background: linear-gradient(180deg, #0b0b0f, #15151b); color: #fff; }
+
+    /* ———————————————————————————————————
+       ПРОМО-БАННЕР
+    ———————————————————————————————————— */
+    .promo {
+      border-radius: var(--radius); border: 1px solid var(--border); padding: 36px; margin: 20px 0 80px;
+      background: radial-gradient(800px 300px at 100% 0%, #61a6ff26, transparent), var(--card);
+      display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center;
+    }
+    .promo h3 { font-size: clamp(22px, 3vw, 28px); margin: 0; }
+
+    /* ———————————————————————————————————
+       ФУТЕР
+    ———————————————————————————————————— */
+    footer { border-top: 1px solid var(--border); padding: 40px 0 60px; color: var(--muted); font-size: 14px; }
+    footer .cols { display: grid; gap: 18px; grid-template-columns: 1fr; }
+    footer a { color: inherit; text-decoration: none; }
+    @media (min-width: 700px) { footer .cols { grid-template-columns: repeat(3, 1fr); } }
+
+    /* Мелкие улучшения */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .fade-up { opacity: 0; transform: translateY(12px); transition: opacity .6s ease, transform .6s ease; }
+    .fade-up.reveal { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <!-- Навбар -->
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="links">
+        <a href="#features">Проекты</a>
+        <a href="#about">Обо мне</a>
+        <a href="#contact">Контакты</a>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">GitHub</a>
+        <a class="btn" href="#contact">Написать</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero container center">
+    <h1 class="fade-up">Красиво. Быстро. Минимально.</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">Сайт в стиле Apple: чистая типографика, фокус на продукте и детали, которые чувствуются.</p>
+    <div class="cta fade-up" style="transition-delay:.12s">
+      <a class="btn" href="#features">Смотреть проекты</a>
+      <a class="btn secondary" href="#about">Узнать больше</a>
+    </div>
+    <div class="device fade-up" style="transition-delay:.18s">
+      <div class="bezel">
+        <div class="screen" role="img" aria-label="Демонстрация продукта"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Сетка карточек -->
+  <section id="features" class="container grid">
+    <article class="card gradient fade-up" data-tilt>
+      <div class="inner">
+        <h2>Проект A</h2>
+        <p>Невероятно мощный и интуитивный. Создан, чтобы вдохновлять.</p>
+        <div class="img" aria-hidden="true"></div>
+      </div>
+    </article>
+
+    <article class="card fade-up" data-tilt>
+      <div class="inner">
+        <h2>Проект B</h2>
+        <p>Простота, которую видно. Производительность, которую ощущаешь.</p>
+        <div class="img" style="background: linear-gradient(135deg, #10b981, #3b82f6)" aria-hidden="true"></div>
+      </div>
+    </article>
+
+    <article class="card dark fade-up" data-tilt>
+      <div class="inner">
+        <h2>Проект C</h2>
+        <p>Тёмная тема с глубиной и объёмом — внимание к деталям.</p>
+        <div class="img" style="background: linear-gradient(135deg, #0ea5e9, #8b5cf6)" aria-hidden="true"></div>
+      </div>
+    </article>
+
+    <article class="card fade-up" data-tilt>
+      <div class="inner">
+        <h2>Проект D</h2>
+        <p>Сбалансированная эстетика и умные анимации без перегруза.</p>
+        <div class="img" style="background: linear-gradient(135deg, #f97316, #ec4899)" aria-hidden="true"></div>
+      </div>
+    </article>
+  </section>
+
+  <!-- Промо -->
+  <section class="container promo fade-up">
+    <h3>Готов к кастомизации за 5 минут</h3>
+    <p class="muted">Замените тексты, положите картинки в <code>assets/</code> и опубликуйте на GitHub Pages. Всё уже адаптивно и доступно.</p>
+    <div class="cta">
+      <a class="btn" href="#about">Как я работаю</a>
+      <a class="btn secondary" href="#contact">Связаться</a>
+    </div>
+  </section>
+
+  <!-- About -->
+  <section id="about" class="container" style="padding: 20px 0 80px">
+    <h2 style="font-size: clamp(28px, 4.2vw, 40px); line-height:1.1; margin:0 0 8px">Привет, я Gitububkm</h2>
+    <p class="muted" style="max-width: 760px">Я люблю чистые интерфейсы и технологии, которые делают жизнь проще. Этот шаблон повторяет принципы дизайна Apple: минимализм, иерархия, акценты цветом и плавные, почти незаметные анимации.</p>
+  </section>
+
+  <!-- Контакты -->
+  <section id="contact" class="container" style="padding: 0 0 40px">
+    <div class="card" style="padding: 24px">
+      <div class="inner">
+        <h2>Свяжитесь со мной</h2>
+        <p class="muted">Открыт к предложениям и коллаборациям.</p>
+        <div class="cta">
+          <a class="btn" href="mailto:you@example.com">you@example.com</a>
+          <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Футер -->
+  <footer>
+    <div class="container cols">
+      <div>
+        <strong>gitububkm</strong><br>
+        <span class="muted">© <span id="y"></span> Все права защищены.</span>
+      </div>
+      <div>
+        <a href="#features">Проекты</a><br>
+        <a href="#about">Обо мне</a><br>
+        <a href="#contact">Контакты</a>
+      </div>
+      <div>
+        <span class="muted">Сделано с заботой о деталях.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Год в футере
+    document.getElementById('y').textContent = new Date().getFullYear();
+
+    // Появление блоков при скролле
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('reveal'); });
+    }, { threshold: .12 });
+    document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+
+    // Лёгкий «tilt» при наведении на карточки
+    const cards = document.querySelectorAll('[data-tilt]');
+    cards.forEach(card => {
+      const img = card.querySelector('.img');
+      card.addEventListener('mousemove', (e) => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - .5;
+        const y = (e.clientY - r.top) / r.height - .5;
+        card.style.transform = `perspective(900px) rotateX(${(-y*4).toFixed(2)}deg) rotateY(${(x*6).toFixed(2)}deg)`;
+        if (img) img.style.transform = `translateY(${-6 + -y*4}px) scale(1.02)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(900px) rotateX(0) rotateY(0)';
+        if (img) img.style.transform = 'translateY(0) scale(1)';
+      });
+    });
+  </script>
+</body>
+</html>
