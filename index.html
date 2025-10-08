@@ -116,7 +116,7 @@
       border-radius: 28px;
       margin: 16px auto 12px;
 
-      background-color: var(--img-bg, var(--card)); /* ключевая строка */
+       background-color:#162634; /* ключевая строка */
 
       border: 1px solid var(--border);
       box-shadow: 0 20px 50px -24px rgba(0,0,0,.35);
@@ -593,7 +593,7 @@ footer { padding-bottom: calc(60px + var(--safe-bottom)); }
       <div><strong>gitububkm</strong><br><span class="muted">© <span id="y"></span> Все права защищены.</span></div>
       <div><a href="#features">Проекты</a><br><a href="#contact">Контакты</a></div>
       <div><span class="muted">Сделано с заботой о деталях.</span></div>
-      <div><span class="muted">mk XVII</span></div>
+      <div><span class="muted">mk XVIII</span></div>
     </div>
   </footer>
 
@@ -636,30 +636,37 @@ footer { padding-bottom: calc(60px + var(--safe-bottom)); }
       });
     });
 
-    /* >>> ПРАВКА: автоподстановка изображений + фон из доминирующего цвета */
-    (function () {
-      const tryExts = ['webp','jpg','png','jpeg'];
+    <script>
+/* Автоподстановка изображений + фикс-фон */
+(function () {
+  const tryExts = ['webp','jpg','png','jpeg'];
+  const BG = '#162634'; // твой образец
 
-      function dominantColor(imgEl) {
-        try {
-          const c = document.createElement('canvas');
-          const ctx = c.getContext('2d', { willReadFrequently: true });
-          const w = c.width = 24, h = c.height = 24;
-          ctx.drawImage(imgEl, 0, 0, w, h);
-          const { data } = ctx.getImageData(0, 0, w, h);
-          let r=0,g=0,b=0,n=0;
-          for (let i=0;i<data.length;i+=4) {
-            const R=data[i], G=data[i+1], B=data[i+2], A=data[i+3];
-            if (A<200) continue;
-            const max=Math.max(R,G,B), min=Math.min(R,G,B);
-            if (max<12) continue;
-            if (min>245) continue;
-            r+=R; g+=G; b+=B; n++;
-          }
-          if (!n) return [30,30,30];
-          return [Math.round(r/n), Math.round(g/n), Math.round(b/n)];
-        } catch { return [30,30,30]; }
-      }
+  document.querySelectorAll('.card .img').forEach(el => {
+    const nameAttr = el.getAttribute('data-proj');
+    const heading = el.closest('.card')?.querySelector('h2')?.textContent?.trim();
+    const base = (nameAttr || heading || '').trim();
+    if (!base) return;
+
+    (function loadWithExt(i){
+      if(i>=tryExts.length) return;
+      const url = `assets/${encodeURIComponent(base)}.${tryExts[i]}`;
+      const probe = new Image();
+      probe.onload = () => {
+        // слой 1 — картинка (contain), слой 2 — однотонная подложка нужного цвета
+        el.style.background = `
+          center / contain no-repeat url("${url}"),
+          linear-gradient(${BG}, ${BG})
+        `.trim();
+        el.style.setProperty('--img-bg', BG);      // на всякий случай, если где-то используешь var(--img-bg)
+        el.setAttribute('aria-label', base);
+      };
+      probe.onerror = () => loadWithExt(i+1);
+      probe.src = url;
+    })(0);
+  });
+})();
+</script>
 
       document.querySelectorAll('.card .img').forEach(el => {
         const nameAttr = el.getAttribute('data-proj');
