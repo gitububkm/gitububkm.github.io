@@ -1,4 +1,4 @@
-// ===== ЛР-6: ядро (front-only demo). БД = localStorage; крипто = WebCrypto. =====
+	// ===== ЛР-6: ядро (front-only demo). БД = localStorage; крипто = WebCrypto. =====
 const LAB6 = (()=> {
   const enc = new TextEncoder();
   const dec = new TextDecoder();

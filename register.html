@@ -4,18 +4,17 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>ЛР-6 — Регистрация · gitububkm</title>
-  <link rel="icon" href="../assets/favicon.svg" />
-  <!-- ВАЖНО: style.css лежит в корне репозитория -->
-  <link rel="stylesheet" href="../style.css">
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <nav class="nav">
     <div class="container wrap">
       <div class="logo">gitububkm</div>
       <div class="links">
-        <a href="../index.html#features">Проекты</a>
-        <a href="../index.html#contact">Контакты</a>
-        <a href="../index.html#lab6-entry">ЛР-6</a>
+        <a href="index.html#features">Проекты</a>
+        <a href="index.html#contact">Контакты</a>
+        <a href="index.html#lab6-entry">ЛР-6</a>
       </div>
       <div class="actions">
         <a class="btn secondary" href="login.html">Уже есть аккаунт</a>
@@ -43,10 +42,8 @@
     </div>
   </header>
 
-  <!-- ВАЖНО: lab6.js должен лежать в /lab6/lab6.js -->
   <script src="lab6.js"></script>
   <script>
-    // Регистрация → редирект на логин
     document.getElementById('r_btn')?.addEventListener('click', async () => {
       const u = document.getElementById('r_username').value.trim();
       const p = document.getElementById('r_password').value;

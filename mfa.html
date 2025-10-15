@@ -4,8 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>ЛР-6 — MFA · gitububkm</title>
-  <link rel="icon" href="../assets/favicon.svg" />
-  <link rel="stylesheet" href="../style.css">
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <nav class="nav">
@@ -13,10 +13,10 @@
       <div class="logo">gitububkm</div>
       <div class="links">
         <a href="login.html">Авторизация</a>
-        <a href="../index.html#lab6-entry">ЛР-6</a>
+        <a href="index.html#lab6-entry">ЛР-6</a>
       </div>
       <div class="actions">
-        <a class="btn secondary" href="../index.html">На главную</a>
+        <a class="btn secondary" href="index.html">На главную</a>
       </div>
     </div>
   </nav>
@@ -42,7 +42,6 @@
 
   <script src="lab6.js"></script>
   <script>
-    // показать сгенерированный код
     document.getElementById('mfa_mock_code').textContent = LAB6.peekMFACode() || '—';
     document.getElementById('mfa_btn')?.addEventListener('click', async () => {
       const code = document.getElementById('mfa_code').value.trim();
