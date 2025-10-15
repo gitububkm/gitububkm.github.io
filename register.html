@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>ЛР-6 — Регистрация · gitububkm</title>
   <link rel="icon" href="assets/favicon.svg" />
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <nav class="nav">
@@ -24,11 +24,13 @@
 
   <header class="hero container center">
     <h1 class="fade-up">ЛР-6: Регистрация</h1>
-    <p class="muted fade-up" style="transition-delay:.06s">Создайте аккаунт: пароль хэшируется (PBKDF2-SHA-256 + соль), хранится только хэш.</p>
+    <p class="muted fade-up" style="transition-delay:.06s">
+      Создайте аккаунт: пароль хэшируется (PBKDF2-SHA-256 + соль), хранится только хэш.
+    </p>
 
     <div class="card fade-up" style="padding:24px; margin-top:24px">
       <div class="inner">
-        <div class="lab6-row" style="justify-content:center">
+        <div class="lab6-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
           <input class="input" id="r_username" placeholder="Имя пользователя">
           <input class="input" id="r_password" type="password" placeholder="Пароль">
           <select class="input" id="r_role" title="Роль">
@@ -42,6 +44,7 @@
     </div>
   </header>
 
+  <!-- Важно: lab6.js лежит в КОРНЕ рядом с этим файлом -->
   <script src="lab6.js"></script>
   <script>
     document.getElementById('r_btn')?.addEventListener('click', async () => {
