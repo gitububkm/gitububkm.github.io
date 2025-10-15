@@ -4,24 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ЛР-6 — Регистрация · gitububkm</title>
-
-  <!-- Эти файлы ДОЛЖНЫ быть в корне -->
   <link rel="icon" href="assets/favicon.svg" />
   <link rel="stylesheet" href="style.css" />
-
-  <style>
-    /* Локальный «страховочный» стиль, чтобы форма была видна даже без style.css */
-    .fallback-shell{max-width:960px;margin:0 auto;padding:24px}
-    .fallback-card{border:1px solid #e5e5ea;border-radius:16px;padding:20px}
-    .fallback-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-    .fallback-input{border:1px solid #e5e5ea;border-radius:12px;padding:10px 12px;min-width:220px}
-    .fallback-btn{border:0;border-radius:999px;padding:12px 18px;background:#0071e3;color:#fff;cursor:pointer}
-    .fallback-log{white-space:pre-wrap;background:#f6f7f9;border:1px solid #e5e5ea;border-radius:12px;padding:10px;margin-top:12px}
-    .hide-if-styled{display:none}
-  </style>
 </head>
 <body>
-  <!-- Навбар (покажется красиво, если style.css подгрузится) -->
   <nav class="nav">
     <div class="container wrap">
       <div class="logo">gitububkm</div>
@@ -36,19 +22,17 @@
     </div>
   </nav>
 
-  <!-- HERO -->
   <header class="hero container center">
     <h1 class="fade-up">ЛР-6: Регистрация</h1>
     <p class="muted fade-up" style="transition-delay:.06s">
       Пароль хэшируется (PBKDF2-SHA-256 + соль), хранится только хэш.
     </p>
 
-    <!-- «Красивый» блок (если style.css есть) -->
-    <div class="card fade-up hide-if-styled" style="padding:24px; margin-top:24px">
+    <div class="card fade-up" style="padding:24px; margin-top:24px">
       <div class="inner">
         <div class="lab6-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
-          <input class="input" id="r_username" placeholder="Имя пользователя">
-          <input class="input" id="r_password" type="password" placeholder="Пароль">
+          <input class="input" id="r_username" placeholder="Имя пользователя" />
+          <input class="input" id="r_password" type="password" placeholder="Пароль" />
           <select class="input" id="r_role" title="Роль">
             <option value="user" selected>user</option>
             <option value="admin">admin</option>
@@ -58,77 +42,26 @@
         <pre class="lab6-log" id="r_log" style="max-width:720px;margin:12px auto 0"></pre>
       </div>
     </div>
-
-    <!-- Фолбэк-блок (если style.css/классы не применились) -->
-    <div class="fallback-shell">
-      <div class="fallback-card" id="fb_card" hidden>
-        <div class="fallback-row">
-          <input class="fallback-input" id="fb_username" placeholder="Имя пользователя">
-          <input class="fallback-input" id="fb_password" type="password" placeholder="Пароль">
-          <select class="fallback-input" id="fb_role">
-            <option value="user" selected>user</option>
-            <option value="admin">admin</option>
-          </select>
-          <button class="fallback-btn" id="fb_btn">Зарегистрироваться</button>
-        </div>
-        <div class="fallback-log" id="fb_log"></div>
-      </div>
-    </div>
   </header>
 
-  <!-- ЛОГИКА -->
-  <script>
-    // Покажем «красивый» блок, если есть класс .card из style.css
-    (function ensureVisible(){
-      const styled = !!document.querySelector('.card'); // .card определён в твоём style.css
-      if (styled) {
-        document.querySelector('.hide-if-styled')?.classList.remove('hide-if-styled');
-      } else {
-        document.getElementById('fb_card').hidden = false;
-      }
-    })();
-  </script>
-
-  <!-- lab6.js ДОЛЖЕН лежать в КОРНЕ рядом: /lab6.js -->
   <script src="lab6.js"></script>
-
   <script>
-    // Единая логика для обоих вариантов (красивый + фолбэк)
-    (function wire(){
-      // Выбор элементов (берём из красивого блока, если он видим; иначе — из фолбэка)
-      const isFancy = !document.querySelector('.hide-if-styled');
-      const $ = (id1, id2) => document.getElementById(isFancy ? id1 : id2);
-
-      const u = $('r_username','fb_username');
-      const p = $('r_password','fb_password');
-      const r = $('r_role','fb_role');
-      const b = $('r_btn','fb_btn');
-      const out = $('r_log','fb_log');
-
-      // Если LAB6 не загрузился — честно скажем, чтобы было видно ПРИЧИНУ
-      if (!window.LAB6) {
-        out.textContent = 'lab6.js НЕ загрузился. Проверь путь и имя файла (должен быть /lab6.js в корне).';
-        if (b) b.disabled = true;
-        return;
-      }
-
-      b?.addEventListener('click', async () => {
-        const name = u.value.trim();
-        const pass = p.value;
-        const role = r.value;
-        out.textContent = '';
-        if (!name || !pass) { out.textContent = 'Введите логин и пароль'; return; }
-        try {
-          const ok = await LAB6.register(name, pass, role);
-          if (ok) {
-            out.textContent = `OK: ${name} (${role}) создан. Переходим к авторизации…`;
-            setTimeout(()=> location.href = 'login.html', 800);
-          }
-        } catch (e) {
-          out.textContent = e.message || 'Ошибка регистрации';
+    document.getElementById('r_btn')?.addEventListener('click', async () => {
+      const u = document.getElementById('r_username').value.trim();
+      const p = document.getElementById('r_password').value;
+      const role = document.getElementById('r_role').value;
+      const out = document.getElementById('r_log'); out.textContent = '';
+      if (!u || !p) { out.textContent = 'Введите логин и пароль'; return; }
+      try {
+        const ok = await LAB6.register(u, p, role);
+        if (ok) {
+          out.textContent = `OK: ${u} (${role}) создан. Переходим к авторизации…`;
+          setTimeout(()=> location.href = 'login.html', 700);
         }
-      });
-    })();
+      } catch(e) {
+        out.textContent = e.message || 'Ошибка регистрации';
+      }
+    });
   </script>
 </body>
 </html>

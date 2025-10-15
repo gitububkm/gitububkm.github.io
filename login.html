@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="ру">
+<html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ЛР-6 — Авторизация · gitububkm</title>
   <link rel="icon" href="assets/favicon.svg" />
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <nav class="nav">
@@ -23,13 +23,13 @@
 
   <header class="hero container center">
     <h1 class="fade-up">ЛР-6: Авторизация</h1>
-    <p class="muted fade-up" style="transition-delay:.06s">Вводите логин и пароль. Если включен MFA — перейдём на подтверждение кода.</p>
+    <p class="muted fade-up" style="transition-delay:.06s">Если включена MFA — потребуется подтверждение кода.</p>
 
     <div class="card fade-up" style="padding:24px; margin-top:24px">
       <div class="inner">
-        <div class="lab6-row" style="justify-content:center">
-          <input class="input" id="l_username" placeholder="Имя пользователя">
-          <input class="input" id="l_password" type="password" placeholder="Пароль">
+        <div class="lab6-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+          <input class="input" id="l_username" placeholder="Имя пользователя" />
+          <input class="input" id="l_password" type="password" placeholder="Пароль" />
           <button class="btn" id="l_btn">Войти</button>
         </div>
         <pre class="lab6-log" id="l_log" style="max-width:720px;margin:12px auto 0"></pre>

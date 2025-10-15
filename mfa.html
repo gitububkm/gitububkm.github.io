@@ -2,10 +2,10 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>ЛР-6 — MFA · gitububkm</title>
   <link rel="icon" href="assets/favicon.svg" />
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <nav class="nav">
@@ -23,16 +23,16 @@
 
   <header class="hero container center">
     <h1 class="fade-up">Подтверждение входа (MFA)</h1>
-    <p class="muted fade-up" style="transition-delay:.06s">Введите 6-значный код. Для демо «письмо» показано ниже.</p>
+    <p class="muted fade-up" style="transition-delay:.06s">Введите 6-значный код. Для демо код отображён ниже.</p>
 
     <div class="card fade-up" style="padding:24px; margin-top:24px">
       <div class="inner">
-        <div class="lab6-row" style="justify-content:center">
-          <input class="input" id="mfa_code" placeholder="Код из письма">
+        <div class="lab6-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+          <input class="input" id="mfa_code" placeholder="Код" />
           <button class="btn" id="mfa_btn">Подтвердить</button>
         </div>
-        <div class="lab6-mockmail" style="max-width:640px;margin:0 auto">
-          <div class="lab6-mail-head">«Вход в систему: ваш код»</div>
+        <div class="lab6-mockmail" style="max-width:640px;margin:12px auto 0">
+          <div class="lab6-mail-head">«Ваш код входа»</div>
           <div class="lab6-mail-body"><span id="mfa_mock_code">—</span></div>
         </div>
         <pre class="lab6-log" id="mfa_log" style="max-width:720px;margin:12px auto 0"></pre>
