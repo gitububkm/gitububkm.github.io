@@ -1,201 +1,294 @@
-	// ===== ЛР-6: ядро (front-only demo). БД = localStorage; крипто = WebCrypto. =====
-const LAB6 = (()=> {
+// lab6.js — простая учебная ААА-система (без сервера), хранение в localStorage.
+// Реализовано: регистрация (PBKDF2+соль), аутентификация, токены access/refresh,
+// авторизация по ролям, MFA (код 6 цифр), смена пароля, роли (admin), управление сессиями.
+
+(function () {
+  const NS = 'lab6.v1';       // пространство имён в localStorage
+  const ACCESS_TTL_MS  = 1000 * 60 * 5;     // 5 минут
+  const REFRESH_TTL_MS = 1000 * 60 * 60 * 24; // 24 часа
+
+  // ---------- Утилиты ----------
   const enc = new TextEncoder();
-  const dec = new TextDecoder();
-  const now = () => Math.floor(Date.now()/1000);
-  const rand = (n=16) => crypto.getRandomValues(new Uint8Array(n));
-  const toHex = (buf) => Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-  const b64u = {
-    enc: (bytes) => {
-      let s = typeof bytes === 'string' ? btoa(bytes) : btoa(String.fromCharCode(...new Uint8Array(bytes)));
-      return s.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    },
-    dec: (s) => {
-      s = s.replace(/-/g,'+').replace(/_/g,'/');
-      const pad = s.length%4 ? '='.repeat(4-(s.length%4)) : '';
-      return Uint8Array.from(atob(s+pad), c => c.charCodeAt(0));
-    }
-  };
-  const DB_USERS = 'lab6_users';
-  const DB_SESS  = 'lab6_sessions';
-  const CURR     = 'lab6_current';
-  const MFA_TMP  = 'lab6_mfa_pending';
-  const SECRET   = enc.encode('demo-secret-only-for-lab6'); // демонстрационный секрет
+  function now() { return Date.now(); }
 
-  const read = k => JSON.parse(localStorage.getItem(k) || (k===CURR ? 'null' : '[]'));
-  const write = (k,v) => localStorage.setItem(k, JSON.stringify(v));
-  const del = k => localStorage.removeItem(k);
+  function toHex(buf) {
+    const b = new Uint8Array(buf);
+    return [...b].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
 
-  async function pbkdf2(password, saltHex, iterations=100_000, dkLen=32){
+  function fromHex(hex) {
+    if (!hex) return new Uint8Array();
+    const out = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+    return out;
+  }
+
+  function rid(len = 32) { // крипто-случайный id в hex
+    const b = new Uint8Array(len);
+    crypto.getRandomValues(b);
+    return toHex(b);
+  }
+
+  async function pbkdf2(password, saltHex, iters = 120000) {
     const key = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
-    const salt = new Uint8Array(saltHex.match(/.{2}/g).map(h=>parseInt(h,16)));
-    const bits = await crypto.subtle.deriveBits({name:'PBKDF2', hash:'SHA-256', salt, iterations}, key, dkLen*8);
+    const salt = fromHex(saltHex);
+    const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt, iterations: iters }, key, 256);
     return toHex(bits);
   }
-  async function hmac(keyBytes, dataBytes){
-    const key = await crypto.subtle.importKey('raw', keyBytes, {name:'HMAC', hash:'SHA-256'}, false, ['sign']);
-    const sig = await crypto.subtle.sign('HMAC', key, dataBytes);
-    return new Uint8Array(sig);
+
+  function readDB() {
+    const raw = localStorage.getItem(NS);
+    return raw ? JSON.parse(raw) : { users: [], sessions: {}, lastMFA: null };
   }
-  async function signJwt(payload, ttl){
-    const header = {alg:'HS256', typ:'JWT'};
-    const iat = now(), exp = iat + ttl;
-    const body = {...payload, iat, exp};
-    const h = b64u.enc(enc.encode(JSON.stringify(header)));
-    const p = b64u.enc(enc.encode(JSON.stringify(body)));
-    const sig = b64u.enc(await hmac(SECRET, enc.encode(`${h}.${p}`)));
-    return `${h}.${p}.${sig}`;
-  }
-  async function verifyJwt(tok){
-    const [h,p,s] = tok.split('.');
-    if(!h||!p||!s) throw new Error('bad token');
-    const sig = b64u.enc(await hmac(SECRET, enc.encode(`${h}.${p}`)));
-    if(sig !== s) throw new Error('bad signature');
-    const payload = JSON.parse(dec.decode(b64u.dec(p)));
-    if(payload.exp < now()) throw new Error('expired');
-    return payload;
+  function writeDB(db) { localStorage.setItem(NS, JSON.stringify(db)); }
+
+  function getUser(db, username) { return db.users.find(u => u.username === username); }
+
+  function ensureUserIndex(db, username) {
+    const i = db.users.findIndex(u => u.username === username);
+    if (i < 0) throw new Error('Пользователь не найден');
+    return i;
   }
 
-  function users(){ return read(DB_USERS); }
-  function saveUsers(v){ write(DB_USERS, v); }
-
-  async function register(username, password, role){
-    const U = users();
-    if (U.some(x=>x.username===username)) throw new Error('Пользователь уже существует');
-    const salt = toHex(rand(16));
-    const hash = await pbkdf2(password, salt);
-    U.push({username, salt, hash, role, mfaEnabled:false});
-    saveUsers(U);
-    return true;
+  function makeToken(payload) {
+    // Упрощённый «JWT»: header.payload.signature (всё в base64url), подпись имитируем случайным ключом
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
+    const body   = btoa(JSON.stringify(payload)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
+    const sig    = rid(16);
+    return `${header}.${body}.${sig}`;
   }
 
-  async function issueSession(username, role){
-    const sid = toHex(rand(12));
-    const access  = await signJwt({sub:username, role, sid}, 120);
-    const refresh = await signJwt({sub:username, role, sid, typ:'R'}, 1800);
-    const S = read(DB_SESS);
-    const rPayload = JSON.parse(dec.decode(b64u.dec(refresh.split('.')[1])));
-    S.push({sid, username, refresh, exp: rPayload.exp});
-    write(DB_SESS, S);
-    write(CURR, {username, role, sid, access, refresh});
-  }
-
-  async function login(username, password){
-    const U = users();
-    const u = U.find(x=>x.username===username);
-    if(!u) throw new Error('Неверные учетные данные');
-    const h = await pbkdf2(password, u.salt);
-    if(h !== u.hash) throw new Error('Неверные учетные данные');
-
-    if (u.mfaEnabled){
-      const code = String(Math.floor(100000 + Math.random()*900000));
-      write(MFA_TMP, {username: u.username, role: u.role, code});
-      return 'mfa';
-    }
-    await issueSession(u.username, u.role);
-    return 'ok';
-  }
-
-  function peekMFACode(){
-    const p = read(MFA_TMP);
-    return p?.code || null;
-  }
-
-  async function verifyMFA(code){
-    const p = read(MFA_TMP);
-    if(!p) throw new Error('Нет ожидающей MFA');
-    if(code !== p.code) throw new Error('Неверный код');
-    del(MFA_TMP);
-    await issueSession(p.username, p.role);
-    return true;
-  }
-
-  function current(){ return read(CURR); }
-
-  function logout(){
-    const c = current();
-    if (c){
-      const S = read(DB_SESS).filter(s=>s.sid!==c.sid);
-      write(DB_SESS, S);
-    }
-    del(CURR);
-  }
-
-  async function refresh(){
-    const c = current();
-    if(!c) throw new Error('Нет сессии');
-    const payload = await verifyJwt(c.refresh).catch(e => { throw new Error('Refresh недействителен'); });
-    const S = read(DB_SESS);
-    const rec = S.find(s=>s.sid===payload.sid && s.username===payload.sub && s.refresh===c.refresh && s.exp>=now());
-    if(!rec) throw new Error('Refresh недействителен');
-    const access = await signJwt({sub:payload.sub, role:payload.role, sid:payload.sid}, 120);
-    write(CURR, {...c, access});
-    return 'Access обновлён';
-  }
-
-  async function call(requiredRole){
-    const c = current();
-    if(!c) throw new Error('401: нет токена');
+  function parseAccess(access) {
     try {
-      const p = await verifyJwt(c.access);
-      if (requiredRole && p.role !== requiredRole) throw new Error('403: недостаточно прав');
-      return `200: доступ для ${p.sub} (${p.role})`;
-    } catch(e){
-      throw new Error('401: токен недействителен/истёк — обновите access');
-    }
+      const parts = access.split('.');
+      if (parts.length < 2) return null;
+      const body = JSON.parse(atob(parts[1].replaceAll('-','+').replaceAll('_','/')));
+      return body;
+    } catch { return null; }
   }
 
-  async function changePassword(oldPass, newPass){
-    const c = current(); if(!c) throw new Error('Сначала войдите');
-    const U = users();
-    const u = U.find(x=>x.username===c.username); if(!u) throw new Error('Пользователь не найден');
-    const oldH = await pbkdf2(oldPass, u.salt);
-    if(oldH !== u.hash) throw new Error('Неверный старый пароль');
-    const newSalt = toHex(rand(16)), newHash = await pbkdf2(newPass, newSalt);
-    u.salt = newSalt; u.hash = newHash; saveUsers(U);
-    write(DB_SESS, read(DB_SESS).filter(s=>s.username!==u.username));
-    del(CURR);
-    return 'OK: пароль изменён, сессии сброшены';
+  function setCurrentSession(session) {
+    if (!session) localStorage.removeItem(NS + '.current');
+    else localStorage.setItem(NS + '.current', JSON.stringify(session));
+  }
+  function getCurrentSession() {
+    const raw = localStorage.getItem(NS + '.current');
+    return raw ? JSON.parse(raw) : null;
   }
 
-  async function setMFA(enable){
-    const c = current(); if(!c) throw new Error('Сначала войдите');
-    const U = users();
-    const u = U.find(x=>x.username===c.username); if(!u) throw new Error('Пользователь не найден');
-    u.mfaEnabled = !!enable; saveUsers(U);
-    return 'OK: MFA ' + (enable ? 'включена' : 'выключена');
+  function requireLogged() {
+    const cur = getCurrentSession();
+    if (!cur) throw new Error('Нет активной сессии');
+    return cur;
   }
 
-  async function setRole(username, role){
-    const c = current(); if(!c) throw new Error('Сначала войдите');
-    const p = await verifyJwt(c.access).catch(()=>null);
-    if(!p || p.role!=='admin') throw new Error('403: требуется admin');
-    const U = users();
-    const u = U.find(x=>x.username===username); if(!u) throw new Error('Пользователь не найден');
-    u.role = role; saveUsers(U);
-    return `OK: роль ${username} → ${role}`;
-  }
+  // ---------- API ----------
+  const LAB6 = {
+    // Регистрация: создаёт пользователя с солью и хэшем пароля
+    async register(username, password, role = 'user') {
+      username = String(username || '').trim();
+      if (!username || !password) throw new Error('Введите логин и пароль');
 
-  function listSessions(){
-    const c = current(); if(!c) return '—';
-    const mine = read(DB_SESS).filter(s=>s.username===c.username);
-    return JSON.stringify(mine, null, 2);
-  }
-  function killCurrent(){
-    const c = current(); if(!c) return;
-    write(DB_SESS, read(DB_SESS).filter(s=>s.sid!==c.sid));
-    del(CURR);
-  }
-  function killAllMine(){
-    const c = current(); if(!c) return;
-    write(DB_SESS, read(DB_SESS).filter(s=>s.username!==c.username));
-    del(CURR);
-  }
+      const db = readDB();
+      if (getUser(db, username)) throw new Error('Пользователь уже существует');
 
-  return {
-    register, login, verifyMFA, peekMFACode,
-    current, logout, refresh, call,
-    changePassword, setMFA, setRole,
-    listSessions, killCurrent, killAllMine
+      const salt = rid(16);
+      const hash = await pbkdf2(password, salt);
+      db.users.push({ username, salt, hash, role: role === 'admin' ? 'admin' : 'user', mfa: false, mfaSecret: null, sessions: [] });
+      writeDB(db);
+      return true;
+    },
+
+    // Логин: возвращает 'mfa' если включена, иначе сразу создаёт сессию
+    async login(username, password) {
+      const db = readDB();
+      const user = getUser(db, username);
+      if (!user) throw new Error('Неверные логин или пароль');
+
+      const calc = await pbkdf2(password, user.salt);
+      if (calc !== user.hash) throw new Error('Неверные логин или пароль');
+
+      if (user.mfa) {
+        // Сгенерируем и «отправим» код (для демо кладём в БД)
+        const code = (Math.floor(Math.random() * 1_000_000)).toString().padStart(6, '0');
+        db.lastMFA = { username, code, ts: now() };
+        writeDB(db);
+        setCurrentSession({ pending: true, username }); // временная отметка
+        return 'mfa';
+      } else {
+        // создаём полноценную сессию
+        const sid = rid(16);
+        const access  = makeToken({ sub: username, role: user.role, sid, exp: now() + ACCESS_TTL_MS });
+        const refresh = makeToken({ sub: username, sid, exp: now() + REFRESH_TTL_MS, type: 'refresh' });
+        const session = { sid, username, role: user.role, access, refresh, accessExp: now() + ACCESS_TTL_MS, refreshExp: now() + REFRESH_TTL_MS };
+        db.sessions[sid] = { ...session };
+        user.sessions.push(sid);
+        writeDB(db);
+        setCurrentSession({ sid, username, role: user.role, access, refresh });
+        return 'ok';
+      }
+    },
+
+    // Подсмотреть MFA-код (для страницы mfa.html)
+    peekMFACode() {
+      const db = readDB();
+      return db.lastMFA?.code || null;
+    },
+
+    // Подтверждение MFA
+    async verifyMFA(code) {
+      const db = readDB();
+      const cur = getCurrentSession();
+      if (!cur?.pending) throw new Error('Нет MFA-процесса');
+
+      const info = db.lastMFA;
+      if (!info || info.username !== cur.username) throw new Error('MFA не запрошена');
+      if (!/^\d{6}$/.test(code) || code !== info.code) throw new Error('Неверный код');
+      if (now() - info.ts > 5 * 60 * 1000) throw new Error('Код истёк');
+
+      // Создаём полноценную сессию
+      const user = getUser(db, info.username);
+      const sid = rid(16);
+      const access  = makeToken({ sub: user.username, role: user.role, sid, exp: now() + ACCESS_TTL_MS });
+      const refresh = makeToken({ sub: user.username, sid, exp: now() + REFRESH_TTL_MS, type: 'refresh' });
+      db.sessions[sid] = { sid, username: user.username, role: user.role, access, refresh, accessExp: now() + ACCESS_TTL_MS, refreshExp: now() + REFRESH_TTL_MS };
+      user.sessions.push(sid);
+      db.lastMFA = null;
+      writeDB(db);
+      setCurrentSession({ sid, username: user.username, role: user.role, access, refresh });
+      return true;
+    },
+
+    // Получить текущую «лёгкую» сессию для UI
+    current() {
+      const cur = getCurrentSession();
+      if (!cur) return null;
+      return { ...cur, access: !!cur.access, refresh: !!cur.refresh };
+    },
+
+    // Обновление access токена по refresh
+    async refresh() {
+      const cur = requireLogged();
+      const db = readDB();
+      const s = db.sessions[cur.sid];
+      if (!s) throw new Error('Сессия не найдена');
+      if (now() > s.refreshExp) { this.logout(); throw new Error('Refresh истёк, войдите снова'); }
+
+      s.access = makeToken({ sub: s.username, role: s.role, sid: s.sid, exp: now() + ACCESS_TTL_MS });
+      s.accessExp = now() + ACCESS_TTL_MS;
+      writeDB(db);
+      setCurrentSession({ sid: s.sid, username: s.username, role: s.role, access: s.access, refresh: s.refresh });
+      return 'Access обновлён';
+    },
+
+    // Вызов защищённого ресурса
+    async call(scope /* 'user' | 'admin' */) {
+      const cur = requireLogged();
+      const db = readDB();
+      const s = db.sessions[cur.sid];
+      if (!s) throw new Error('Нет сессии');
+
+      const payload = parseAccess(s.access);
+      if (!payload || now() > s.accessExp) throw new Error('Access истёк — обновите');
+
+      if (scope === 'admin' && payload.role !== 'admin') throw new Error('Недостаточно прав');
+      return `Доступ к ресурсу "${scope}" разрешён пользователю ${payload.sub}`;
+    },
+
+    // Смена пароля: требует старый пароль, сбрасывает все сессии пользователя
+    async changePassword(oldPass, newPass) {
+      const cur = requireLogged();
+      const db = readDB();
+      const idx = ensureUserIndex(db, cur.username);
+      const user = db.users[idx];
+
+      const check = await pbkdf2(oldPass, user.salt);
+      if (check !== user.hash) throw new Error('Старый пароль неверен');
+
+      const salt = rid(16);
+      const hash = await pbkdf2(newPass, salt);
+      user.salt = salt; user.hash = hash;
+
+      // инвалидируем все сессии
+      (user.sessions || []).forEach(sid => { delete db.sessions[sid]; });
+      user.sessions = [];
+      writeDB(db);
+      this.logout();
+      return 'OK: пароль обновлён, войдите снова';
+    },
+
+    // Включение/выключение MFA
+    async setMFA(on) {
+      const cur = requireLogged();
+      const db = readDB();
+      const idx = ensureUserIndex(db, cur.username);
+      db.users[idx].mfa = !!on;
+      writeDB(db);
+      return 'OK: MFA ' + (on ? 'включена' : 'выключена');
+    },
+
+    // Назначение роли (только admin может)
+    async setRole(username, role) {
+      const cur = requireLogged();
+      const db = readDB();
+      const me = getUser(db, cur.username);
+      if (me.role !== 'admin') throw new Error('Требуется роль admin');
+
+      const idx = ensureUserIndex(db, username);
+      db.users[idx].role = role === 'admin' ? 'admin' : 'user';
+      writeDB(db);
+      return `OK: ${username} теперь ${db.users[idx].role}`;
+    },
+
+    // Список сессий текущего пользователя
+    listSessions() {
+      const cur = requireLogged();
+      const db = readDB();
+      const user = getUser(db, cur.username);
+      const list = (user.sessions || []).map(sid => db.sessions[sid]).filter(Boolean);
+      if (!list.length) return 'Сессий нет';
+      return list.map(s => `sid=${s.sid.slice(0,8)}…  accessExp=${new Date(s.accessExp).toLocaleString()}  refreshExp=${new Date(s.refreshExp).toLocaleString()}`).join('\n');
+    },
+
+    // Завершить текущую сессию
+    killCurrent() {
+      const cur = requireLogged();
+      const db = readDB();
+      const user = getUser(db, cur.username);
+      delete db.sessions[cur.sid];
+      user.sessions = (user.sessions || []).filter(x => x !== cur.sid);
+      writeDB(db);
+      this.logout();
+    },
+
+    // Завершить все мои сессии
+    killAllMine() {
+      const cur = requireLogged();
+      const db = readDB();
+      const user = getUser(db, cur.username);
+      (user.sessions || []).forEach(sid => { delete db.sessions[sid]; });
+      user.sessions = [];
+      writeDB(db);
+      this.logout();
+    },
+
+    // Выход
+    logout() { setCurrentSession(null); }
   };
+
+  // Экспорт
+  window.LAB6 = LAB6;
+
+  // Бонус: если БД пуста — создадим демонстрационного админа
+  (async function bootstrap() {
+    const db = readDB();
+    if (!db.users.length) {
+      const salt = rid(16);
+      const hash = await pbkdf2('admin123', salt);
+      db.users.push({ username: 'admin', salt, hash, role: 'admin', mfa: false, mfaSecret: null, sessions: [] });
+      writeDB(db);
+      console.log('[LAB6] создан демонстрационный admin / admin123');
+    }
+  })();
+
 })();
