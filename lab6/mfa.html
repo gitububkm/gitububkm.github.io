@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>ЛР-6 — MFA · gitububkm</title>
+  <link rel="icon" href="../assets/favicon.svg" />
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="links">
+        <a href="login.html">Авторизация</a>
+        <a href="../index.html#lab6-entry">ЛР-6</a>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="../index.html">На главную</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero container center">
+    <h1 class="fade-up">Подтверждение входа (MFA)</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">Введите 6-значный код. Для демо «письмо» показано ниже.</p>
+
+    <div class="card fade-up" style="padding:24px; margin-top:24px">
+      <div class="inner">
+        <div class="lab6-row" style="justify-content:center">
+          <input class="input" id="mfa_code" placeholder="Код из письма">
+          <button class="btn" id="mfa_btn">Подтвердить</button>
+        </div>
+        <div class="lab6-mockmail" style="max-width:640px;margin:0 auto">
+          <div class="lab6-mail-head">«Вход в систему: ваш код»</div>
+          <div class="lab6-mail-body"><span id="mfa_mock_code">—</span></div>
+        </div>
+        <pre class="lab6-log" id="mfa_log" style="max-width:720px;margin:12px auto 0"></pre>
+      </div>
+    </div>
+  </header>
+
+  <script src="lab6.js"></script>
+  <script>
+    // показать сгенерированный код
+    document.getElementById('mfa_mock_code').textContent = LAB6.peekMFACode() || '—';
+    document.getElementById('mfa_btn')?.addEventListener('click', async () => {
+      const code = document.getElementById('mfa_code').value.trim();
+      const out = document.getElementById('mfa_log'); out.textContent='';
+      try {
+        await LAB6.verifyMFA(code);
+        out.textContent = 'MFA подтверждена. Открываю панель…';
+        setTimeout(()=> location.href = 'app.html', 600);
+      } catch(e){
+        out.textContent = e.message || 'Неверный код';
+      }
+    });
+  </script>
+</body>
+</html>

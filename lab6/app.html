@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>ЛР-6 — Панель · gitububkm</title>
+  <link rel="icon" href="../assets/favicon.svg" />
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="links">
+        <a href="../index.html#lab6-entry">ЛР-6</a>
+      </div>
+      <div class="actions">
+        <button class="btn secondary" id="logout">Выйти</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero container center">
+    <h1 class="fade-up">Панель пользователя</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">Доступ по ролям, обновление токена, смена пароля, MFA и управление сессиями.</p>
+
+    <div class="card fade-up" style="padding:24px; margin-top:24px">
+      <div class="inner">
+        <div class="lab6-state" id="state" style="max-width:860px;margin:0 auto 8px"></div>
+
+        <div class="grid" style="padding:0">
+          <!-- Доступ -->
+          <article class="card">
+            <div class="inner">
+              <h2>Доступ к ресурсам</h2>
+              <p class="muted">Проверка авторизации по роли.</p>
+              <div class="lab6-row" style="justify-content:center">
+                <button class="btn" id="a_user">USER</button>
+                <button class="btn" id="a_admin">ADMIN</button>
+                <button class="btn secondary" id="a_refresh">Обновить access</button>
+              </div>
+              <pre class="lab6-log" id="a_log"></pre>
+            </div>
+          </article>
+
+          <!-- Пароль -->
+          <article class="card">
+            <div class="inner">
+              <h2>Смена пароля</h2>
+              <p class="muted">Требуется старый пароль. Все сессии будут сброшены.</p>
+              <div class="lab6-row" style="justify-content:center">
+                <input class="input" id="p_old" type="password" placeholder="Старый пароль">
+                <input class="input" id="p_new" type="password" placeholder="Новый пароль">
+                <button class="btn" id="p_btn">Сменить</button>
+              </div>
+              <pre class="lab6-log" id="p_log"></pre>
+            </div>
+          </article>
+
+          <!-- MFA -->
+          <article class="card">
+            <div class="inner">
+              <h2>MFA</h2>
+              <p class="muted">Код «по email» смоделирован (показывается на экране).</p>
+              <div class="lab6-row" style="justify-content:center">
+                <button class="btn" id="mfa_enable">Включить</button>
+                <button class="btn secondary" id="mfa_disable">Выключить</button>
+              </div>
+              <pre class="lab6-log" id="mfa_log"></pre>
+            </div>
+          </article>
+
+          <!-- Роли (admin) -->
+          <article class="card">
+            <div class="inner">
+              <h2>Роли (только admin)</h2>
+              <p class="muted">Назначение роли пользователю.</p>
+              <div class="lab6-row" style="justify-content:center">
+                <input class="input" id="role_user" placeholder="Имя пользователя">
+                <select class="input" id="role_value">
+                  <option value="user">user</option>
+                  <option value="admin">admin</option>
+                </select>
+                <button class="btn" id="role_set">Назначить</button>
+              </div>
+              <pre class="lab6-log" id="role_log"></pre>
+            </div>
+          </article>
+
+          <!-- Сессии -->
+          <article class="card">
+            <div class="inner">
+              <h2>Сессии</h2>
+              <p class="muted">Просмотр и завершение.</p>
+              <div class="lab6-row" style="justify-content:center">
+                <button class="btn" id="s_list">Показать</button>
+                <button class="btn secondary" id="s_kill">Завершить текущую</button>
+                <button class="btn secondary" id="s_kill_all">Завершить все</button>
+              </div>
+              <pre class="lab6-log" id="s_log"></pre>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <script src="lab6.js"></script>
+  <script>
+    function renderStateBox() {
+      const s = LAB6.current();
+      const html = `
+        <div><strong>Пользователь:</strong> ${s?.username ?? '—'}</div>
+        <div><strong>Роль:</strong> ${s?.role ?? '—'}</div>
+        <div><strong>Access:</strong> ${s?.access ? 'выдан' : '—'}</div>
+        <div><strong>Refresh:</strong> ${s?.refresh ? 'выдан' : '—'}</div>
+      `;
+      document.getElementById('state').innerHTML = html;
+    }
+
+    // Гвард: требуется вход
+    if (!LAB6.current()) location.replace('login.html');
+
+    renderStateBox();
+
+    // Кнопки
+    document.getElementById('logout').onclick = ()=> { LAB6.logout(); location.replace('login.html'); };
+
+    document.getElementById('a_user').onclick   = async ()=> document.getElementById('a_log').textContent = await LAB6.call('user').catch(e=>e.message);
+    document.getElementById('a_admin').onclick  = async ()=> document.getElementById('a_log').textContent = await LAB6.call('admin').catch(e=>e.message);
+    document.getElementById('a_refresh').onclick= async ()=> { const m = await LAB6.refresh().catch(e=>e.message); document.getElementById('a_log').textContent = m; renderStateBox(); };
+
+    document.getElementById('p_btn').onclick = async ()=>{
+      const o = document.getElementById('p_old').value, n = document.getElementById('p_new').value;
+      const m = await LAB6.changePassword(o, n).catch(e=>e.message);
+      document.getElementById('p_log').textContent = m;
+      if (m.startsWith('OK')) setTimeout(()=> location.replace('login.html'), 800);
+    };
+
+    document.getElementById('mfa_enable').onclick  = async ()=> document.getElementById('mfa_log').textContent = await LAB6.setMFA(true).catch(e=>e.message);
+    document.getElementById('mfa_disable').onclick = async ()=> document.getElementById('mfa_log').textContent = await LAB6.setMFA(false).catch(e=>e.message);
+
+    document.getElementById('role_set').onclick = async ()=>{
+      const u = document.getElementById('role_user').value.trim();
+      const r = document.getElementById('role_value').value;
+      document.getElementById('role_log').textContent = await LAB6.setRole(u, r).catch(e=>e.message);
+    };
+
+    document.getElementById('s_list').onclick = ()=> document.getElementById('s_log').textContent = LAB6.listSessions();
+    document.getElementById('s_kill').onclick = ()=> { LAB6.killCurrent(); document.getElementById('s_log').textContent = 'Текущая сессия завершена'; setTimeout(()=>location.replace('login.html'), 600); };
+    document.getElementById('s_kill_all').onclick = ()=> { LAB6.killAllMine(); document.getElementById('s_log').textContent = 'Все сессии пользователя завершены'; setTimeout(()=>location.replace('login.html'), 600); };
+  </script>
+</body>
+</html>
