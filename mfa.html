@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ЛР-6 — MFA · gitububkm</title>
+  <title>ЛР-6 — Подтверждение (MFA) · gitububkm</title>
   <link rel="icon" href="assets/favicon.svg" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -23,37 +23,52 @@
 
   <header class="hero container center">
     <h1 class="fade-up">Подтверждение входа (MFA)</h1>
-    <p class="muted fade-up" style="transition-delay:.06s">Введите 6-значный код. Для демо код отображён ниже.</p>
+    <p class="muted fade-up" style="transition-delay:.06s">Введите 6-значный код (в демо он показан ниже).</p>
 
     <div class="card fade-up" style="padding:24px; margin-top:24px">
       <div class="inner">
-        <div class="lab6-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
-          <input class="input" id="mfa_code" placeholder="Код" />
-          <button class="btn" id="mfa_btn">Подтвердить</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+          <input class="input" id="mfa_code" placeholder="6-значный код" inputmode="numeric" />
+          <button class="btn" id="mfa_btn" type="button">Подтвердить</button>
         </div>
-        <div class="lab6-mockmail" style="max-width:640px;margin:12px auto 0">
-          <div class="lab6-mail-head">«Ваш код входа»</div>
-          <div class="lab6-mail-body"><span id="mfa_mock_code">—</span></div>
+
+        <!-- «псевдо-письмо» с кодом -->
+        <div style="max-width:640px;margin:12px auto 0;border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--card)">
+          <div style="font-weight:700">«Ваш код входа»</div>
+          <div style="font-size:20px;margin-top:6px"><span id="mfa_mock_code">—</span></div>
         </div>
-        <pre class="lab6-log" id="mfa_log" style="max-width:720px;margin:12px auto 0"></pre>
+
+        <pre id="mfa_log" class="muted" style="max-width:720px;margin:12px auto 0; text-align:left;"></pre>
       </div>
     </div>
   </header>
 
+  <script>document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('reveal')));</script>
   <script src="lab6.js"></script>
   <script>
-    document.getElementById('mfa_mock_code').textContent = LAB6.peekMFACode() || '—';
-    document.getElementById('mfa_btn')?.addEventListener('click', async () => {
-      const code = document.getElementById('mfa_code').value.trim();
-      const out = document.getElementById('mfa_log'); out.textContent='';
-      try {
-        await LAB6.verifyMFA(code);
-        out.textContent = 'MFA подтверждена. Открываю панель…';
-        setTimeout(()=> location.href = 'app.html', 600);
-      } catch(e){
-        out.textContent = e.message || 'Неверный код';
+    (function () {
+      const out = document.getElementById('mfa_log');
+      if (!window.LAB6 || typeof LAB6.verifyMFA !== 'function') {
+        out.textContent = 'Ошибка: не найден lab6.js или метод LAB6.verifyMFA.';
+        return;
       }
-    });
+      // показать код для демо
+      document.getElementById('mfa_mock_code').textContent = LAB6.peekMFACode?.() || '—';
+
+      async function verify(){
+        out.textContent='';
+        const code = (document.getElementById('mfa_code').value||'').trim();
+        if(!/^\d{6}$/.test(code)){ out.textContent='Введите корректный 6-значный код'; return; }
+        try{
+          await LAB6.verifyMFA(code);
+          out.textContent='MFA подтверждена. Открываю панель…';
+          setTimeout(()=>location.href='app.html', 600);
+        }catch(e){ out.textContent = e.message || 'Неверный или истёкший код'; }
+      }
+
+      document.getElementById('mfa_btn').addEventListener('click', verify);
+      document.getElementById('mfa_code').addEventListener('keydown', e=>{ if(e.key==='Enter') verify(); });
+    })();
   </script>
 </body>
 </html>
