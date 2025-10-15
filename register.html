@@ -1,3 +1,89 @@
-<!doctype html><meta charset="utf-8"><title>test</title>
-<h1 style="font-family:system-ui">Если ты это видишь — файл работает</h1>
-<p>Дальше вставим настоящую страницу регистрации.</p>
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ЛР-6 — Регистрация · gitububkm</title>
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Навбар -->
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="links">
+        <a href="index.html#features">Проекты</a>
+        <a href="index.html#contact">Контакты</a>
+        <a href="index.html#lab6-entry">ЛР-6</a>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="login.html">Уже есть аккаунт</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Контент -->
+  <header class="hero container center">
+    <h1 class="fade-up">ЛР-6: Регистрация</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">
+      Пароль хэшируется (PBKDF2-SHA-256 + соль), хранится только хэш.
+    </p>
+
+    <div class="card fade-up" style="padding:24px; margin-top:24px">
+      <div class="inner">
+        <div class="lab6-row" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+          <input class="input" id="r_username" placeholder="Имя пользователя" autocomplete="username" />
+          <input class="input" id="r_password" type="password" placeholder="Пароль" autocomplete="new-password" />
+          <select class="input" id="r_role" title="Роль">
+            <option value="user" selected>user</option>
+            <option value="admin">admin</option>
+          </select>
+          <button class="btn" id="r_btn" type="button">Зарегистрироваться</button>
+        </div>
+        <pre class="lab6-log" id="r_log" style="max-width:720px;margin:12px auto 0"></pre>
+      </div>
+    </div>
+  </header>
+
+  <!-- ЛР6 логика -->
+  <script src="lab6.js"></script>
+  <script>
+    (function () {
+      const u = document.getElementById('r_username');
+      const p = document.getElementById('r_password');
+      const role = document.getElementById('r_role');
+      const btn = document.getElementById('r_btn');
+      const out = document.getElementById('r_log');
+
+      // Показать понятную причину, если lab6.js не подгрузился или в нём нет LAB6
+      if (!window.LAB6 || typeof LAB6.register !== 'function') {
+        out.textContent = 'Ошибка: не найден lab6.js или объект LAB6. Проверь, что lab6.js лежит в корне и подключён без <script> тегов внутри.';
+        if (btn) btn.disabled = true;
+        return;
+      }
+
+      async function doRegister() {
+        out.textContent = '';
+        const name = (u.value || '').trim();
+        const pass = p.value || '';
+        const r = role.value || 'user';
+        if (!name || !pass) { out.textContent = 'Введите логин и пароль'; return; }
+        try {
+          const ok = await LAB6.register(name, pass, r);
+          if (ok) {
+            out.textContent = `OK: ${name} (${r}) создан. Переходим к авторизации…`;
+            setTimeout(() => location.href = 'login.html', 700);
+          }
+        } catch (e) {
+          out.textContent = e.message || 'Ошибка регистрации';
+        }
+      }
+
+      btn.addEventListener('click', doRegister);
+      p.addEventListener('keydown', (e) => { if (e.key === 'Enter') doRegister(); });
+      u.addEventListener('keydown', (e) => { if (e.key === 'Enter') doRegister(); });
+    })();
+  </script>
+</body>
+</html>
