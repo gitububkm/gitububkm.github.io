@@ -307,3 +307,31 @@ footer { padding-bottom: calc(60px + var(--safe-bottom)); }
 @media (max-width: 360px){
   .nav .links a { font-size: 13px; padding: 6px 10px; }
 }
+/* === ЛР-6: оформление вкладок/панелей, без вмешательства в общий стиль === */
+.lab6-state {
+  display:grid; gap:6px; grid-template-columns:1fr;
+  padding:12px 14px; border:1px solid var(--border); border-radius:12px; background:var(--card);
+  margin: 8px 0 16px;
+}
+.lab6-tabs { display:flex; flex-wrap:wrap; gap:8px; margin: 8px 0 12px; }
+.lab6-tab {
+  border:1px solid var(--border); background:color-mix(in srgb, var(--bg) 70%, transparent);
+  border-radius:999px; padding:8px 14px; font:inherit; cursor:pointer;
+}
+.lab6-tab.is-active { background:var(--accent); color:#fff; border-color:transparent; }
+.lab6-panels { display:block; }
+.lab6-panel { border:1px solid var(--border); border-radius:16px; background:var(--card); padding:14px; }
+.lab6-panel + .lab6-panel { margin-top:12px; }
+.lab6-row { display:flex; flex-wrap:wrap; gap:10px; margin: 8px 0 10px; }
+.lab6-row .input { min-width:min(240px, 100%); }
+.lab6-log {
+  white-space:pre-wrap; background:color-mix(in srgb, var(--bg) 92%, transparent);
+  border:1px dashed var(--border); border-radius:10px; padding:10px; font-size:13px; margin:8px 0 0;
+  max-height:260px; overflow:auto;
+}
+.lab6-mockmail { border:1px solid var(--border); border-radius:12px; overflow:hidden; margin-top:10px; }
+.lab6-mail-head { padding:10px 12px; background:color-mix(in srgb, var(--card) 80%, transparent); font-weight:700; }
+.lab6-mail-body { padding:16px 12px; font-size: 24px; letter-spacing:2px; }
+@media (max-width:700px){
+  .lab6-row { flex-direction:column; }
+}

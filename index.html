@@ -110,6 +110,130 @@
             <a class="btn" href="https://t.me/ububkmburry" target="_blank" rel="noreferrer">Telegram</a>
             <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">GitHub</a>
           </div>
+<!-- Лабораторная работа 6 -->
+<section id="lab6" class="container" style="padding: 0 0 60px">
+  <div class="card" style="padding: 24px">
+    <div class="inner">
+      <h2>Лабораторная работа 6</h2>
+      <p class="muted">Прототип системы аутентификации и авторизации: хэширование паролей, аутентификация с токенами, авторизация по ролям, управление сессиями, смена пароля и многофакторная аутентификация (код по email — смоделировано).</p>
+
+      <!-- Текущее состояние -->
+      <div id="lab6_state" class="lab6-state">
+        <div><strong>Текущий пользователь:</strong> <span id="lab6_currentUser">—</span></div>
+        <div><strong>Роль:</strong> <span id="lab6_currentRole">—</span></div>
+        <div><strong>Access:</strong> <span id="lab6_access">—</span></div>
+        <div><strong>Refresh:</strong> <span id="lab6_refresh">—</span></div>
+      </div>
+
+      <!-- Вкладки -->
+      <div class="lab6-tabs">
+        <button class="lab6-tab is-active" data-tab="register">Регистрация</button>
+        <button class="lab6-tab" data-tab="login">Логин</button>
+        <button class="lab6-tab" data-tab="mfa">MFA</button>
+        <button class="lab6-tab" data-tab="access">Доступ</button>
+        <button class="lab6-tab" data-tab="password">Смена пароля</button>
+        <button class="lab6-tab" data-tab="roles">Роли</button>
+        <button class="lab6-tab" data-tab="sessions">Сессии</button>
+      </div>
+
+      <!-- Панели -->
+      <div class="lab6-panels">
+        <!-- Регистрация -->
+        <div class="lab6-panel" data-panel="register" style="display:block">
+          <div class="lab6-row">
+            <input class="input" id="r_username" placeholder="Имя пользователя" />
+            <input class="input" id="r_password" type="password" placeholder="Пароль" />
+            <select class="input" id="r_role">
+              <option value="user">user</option>
+              <option value="admin">admin</option>
+            </select>
+            <button class="btn" id="r_btn">Зарегистрировать</button>
+          </div>
+          <p class="muted">Пароль хэшируется в браузере (PBKDF2-SHA-256 + соль), в «БД» сохраняется только соль и хэш.</p>
+          <pre class="lab6-log" id="r_log"></pre>
+        </div>
+
+        <!-- Логин -->
+        <div class="lab6-panel" data-panel="login">
+          <div class="lab6-row">
+            <input class="input" id="l_username" placeholder="Имя пользователя" />
+            <input class="input" id="l_password" type="password" placeholder="Пароль" />
+            <button class="btn" id="l_btn">Войти</button>
+            <button class="btn secondary" id="l_logout">Выйти</button>
+          </div>
+          <p class="muted">При успехе выдаются access/refresh токены (HMAC-SHA-256, «JWT-подобные»), создаётся сессия.</p>
+          <pre class="lab6-log" id="l_log"></pre>
+        </div>
+
+        <!-- MFA -->
+        <div class="lab6-panel" data-panel="mfa">
+          <div class="lab6-row">
+            <button class="btn" id="mfa_enable">Включить MFA</button>
+            <button class="btn secondary" id="mfa_disable">Выключить MFA</button>
+          </div>
+          <p class="muted">
+            MFA реализована как «код по email» (смоделировано). При логине с MFA генерируется 6-значный код,
+            который «приходит» в панель ниже. Его нужно ввести для завершения входа.
+          </p>
+          <div class="lab6-row">
+            <input class="input" id="mfa_code_input" placeholder="Введите 6-значный код" />
+            <button class="btn" id="mfa_verify">Подтвердить</button>
+          </div>
+          <div class="lab6-mockmail">
+            <div class="lab6-mail-head">«Вход: одноразовый код»</div>
+            <div class="lab6-mail-body"><span id="mfa_mock_code">—</span></div>
+          </div>
+          <pre class="lab6-log" id="mfa_log"></pre>
+        </div>
+
+        <!-- Доступ -->
+        <div class="lab6-panel" data-panel="access">
+          <div class="lab6-row">
+            <button class="btn" id="a_user">USER-ресурс</button>
+            <button class="btn" id="a_admin">ADMIN-ресурс</button>
+            <button class="btn secondary" id="a_refresh">Обновить access по refresh</button>
+          </div>
+          <pre class="lab6-log" id="a_log"></pre>
+        </div>
+
+        <!-- Смена пароля -->
+        <div class="lab6-panel" data-panel="password">
+          <div class="lab6-row">
+            <input class="input" id="p_old" type="password" placeholder="Старый пароль" />
+            <input class="input" id="p_new" type="password" placeholder="Новый пароль" />
+            <button class="btn" id="p_btn">Сменить пароль</button>
+          </div>
+          <pre class="lab6-log" id="p_log"></pre>
+        </div>
+
+        <!-- Роли -->
+        <div class="lab6-panel" data-panel="roles">
+          <div class="lab6-row">
+            <input class="input" id="role_user" placeholder="Имя пользователя" />
+            <select class="input" id="role_value">
+              <option value="user">user</option>
+              <option value="admin">admin</option>
+            </select>
+            <button class="btn" id="role_set">Назначить роль (ADMIN)</button>
+          </div>
+          <p class="muted">Изменение ролей доступно только при доступе ADMIN.</p>
+          <pre class="lab6-log" id="role_log"></pre>
+        </div>
+
+        <!-- Сессии -->
+        <div class="lab6-panel" data-panel="sessions">
+          <div class="lab6-row">
+            <button class="btn" id="s_list">Показать сессии</button>
+            <button class="btn secondary" id="s_kill">Завершить текущую сессию</button>
+            <button class="btn secondary" id="s_kill_all">Завершить все сессии пользователя</button>
+          </div>
+          <pre class="lab6-log" id="s_log"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
           <div class="reveal-panel" id="gmailPanel" aria-hidden="true">
             <div class="panel-inner">
               <span class="email">ububkmart@gmail.com</span>
