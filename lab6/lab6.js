@@ -88,7 +88,6 @@ const LAB6 = (()=> {
     if(h !== u.hash) throw new Error('Неверные учетные данные');
 
     if (u.mfaEnabled){
-      // сгенерировать код и запомнить временно
       const code = String(Math.floor(100000 + Math.random()*900000));
       write(MFA_TMP, {username: u.username, role: u.role, code});
       return 'mfa';
@@ -154,7 +153,6 @@ const LAB6 = (()=> {
     if(oldH !== u.hash) throw new Error('Неверный старый пароль');
     const newSalt = toHex(rand(16)), newHash = await pbkdf2(newPass, newSalt);
     u.salt = newSalt; u.hash = newHash; saveUsers(U);
-    // Инвалидируем все сессии пользователя
     write(DB_SESS, read(DB_SESS).filter(s=>s.username!==u.username));
     del(CURR);
     return 'OK: пароль изменён, сессии сброшены';

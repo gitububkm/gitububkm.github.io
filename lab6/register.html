@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <title>ЛР-6 — Регистрация · gitububkm</title>
   <link rel="icon" href="../assets/favicon.svg" />
+  <!-- ВАЖНО: style.css лежит в корне репозитория -->
   <link rel="stylesheet" href="../style.css">
 </head>
 <body>
@@ -25,6 +26,7 @@
   <header class="hero container center">
     <h1 class="fade-up">ЛР-6: Регистрация</h1>
     <p class="muted fade-up" style="transition-delay:.06s">Создайте аккаунт: пароль хэшируется (PBKDF2-SHA-256 + соль), хранится только хэш.</p>
+
     <div class="card fade-up" style="padding:24px; margin-top:24px">
       <div class="inner">
         <div class="lab6-row" style="justify-content:center">
@@ -41,6 +43,7 @@
     </div>
   </header>
 
+  <!-- ВАЖНО: lab6.js должен лежать в /lab6/lab6.js -->
   <script src="lab6.js"></script>
   <script>
     // Регистрация → редирект на логин
@@ -49,11 +52,15 @@
       const p = document.getElementById('r_password').value;
       const role = document.getElementById('r_role').value;
       const out = document.getElementById('r_log'); out.textContent = '';
-      if (!u || !p) return out.textContent = 'Введите логин и пароль';
-      const ok = await LAB6.register(u, p, role).catch(e => (out.textContent = e.message));
-      if (ok) {
-        out.textContent = `OK: ${u} (${role}) создан. Переходим к авторизации…`;
-        setTimeout(()=> location.href = 'login.html', 800);
+      if (!u || !p) { out.textContent = 'Введите логин и пароль'; return; }
+      try {
+        const ok = await LAB6.register(u, p, role);
+        if (ok) {
+          out.textContent = `OK: ${u} (${role}) создан. Переходим к авторизации…`;
+          setTimeout(()=> location.href = 'login.html', 800);
+        }
+      } catch(e) {
+        out.textContent = e.message || 'Ошибка регистрации';
       }
     });
   </script>
