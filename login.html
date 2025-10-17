@@ -64,10 +64,10 @@
           const step = await LAB6.login(name, pass);
           if(step === 'mfa'){
             out.textContent = 'MFA включена. Переходим к подтверждению…';
-            setTimeout(()=>location.href='mfa', 500);
+            setTimeout(()=>location.href='authentification', 500);
           }else{
             out.textContent = 'Вход выполнен. Открываю панель…';
-            setTimeout(()=>location.href='app', 500);
+            setTimeout(()=>location.href='user', 500);
           }
         }catch(e){ out.textContent = e.message || 'Ошибка входа'; }
       }

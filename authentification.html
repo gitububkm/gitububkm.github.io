@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>ЛР-6 — Подтверждение (MFA) · gitububkm</title>
+  <title>ЛР-6 — Аутентификация · gitububkm</title>
   <link rel="icon" href="assets/favicon.svg" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -63,7 +63,7 @@
         try{
           await LAB6.verifyMFA(code);
           out.textContent='MFA подтверждена. Открываю панель…';
-          setTimeout(()=>location.href='app', 600);
+          setTimeout(()=>location.href='user', 600);
         }catch(e){ out.textContent = e.message || 'Неверный или истёкший код'; }
       }
 

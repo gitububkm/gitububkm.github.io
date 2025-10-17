@@ -8,8 +8,8 @@
     'index': 'index.html',
     'register': 'register.html',
     'login': 'login.html',
-    'mfa': 'mfa.html',
-    'app': 'app.html'
+    'authentification': 'authentification.html',
+    'user': 'user.html'
   };
 
   // Функция для обработки текущего URL
