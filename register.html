@@ -13,12 +13,12 @@
     <div class="container wrap">
       <div class="logo">gitububkm</div>
       <div class="links">
-        <a href="index.html#features">Проекты</a>
-        <a href="index.html#contact">Контакты</a>
-        <a href="index.html#lab6-entry">ЛР-6</a>
+        <a href="index#features">Проекты</a>
+        <a href="index#contact">Контакты</a>
+        <a href="index#lab6-entry">ЛР-6</a>
       </div>
       <div class="actions">
-        <a class="btn secondary" href="login.html">Уже есть аккаунт</a>
+        <a class="btn secondary" href="login">Уже есть аккаунт</a>
       </div>
     </div>
   </nav>
@@ -55,6 +55,7 @@
 
   <!-- ЛР6 логика -->
   <script src="lab6.js"></script>
+  <script src="router.js"></script>
   <script>
     (function () {
       const u = document.getElementById('r_username');
@@ -80,7 +81,7 @@
           const ok = await LAB6.register(name, pass, role);
           if (ok) {
             out.textContent = `OK: ${name} (${role}) создан. Переходим к авторизации…`;
-            setTimeout(() => location.href = 'login.html', 700);
+            setTimeout(() => location.href = 'login', 700);
           }
         } catch (e) {
           out.textContent = e.message || 'Ошибка регистрации';

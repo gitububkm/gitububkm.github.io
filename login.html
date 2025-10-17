@@ -12,12 +12,12 @@
     <div class="container wrap">
       <div class="logo">gitububkm</div>
       <div class="links">
-        <a href="index.html#features">Проекты</a>
-        <a href="index.html#contact">Контакты</a>
-        <a href="index.html#lab6-entry">ЛР-6</a>
+        <a href="index#features">Проекты</a>
+        <a href="index#contact">Контакты</a>
+        <a href="index#lab6-entry">ЛР-6</a>
       </div>
       <div class="actions">
-        <a class="btn secondary" href="register.html">Регистрация</a>
+        <a class="btn secondary" href="register">Регистрация</a>
       </div>
     </div>
   </nav>
@@ -42,6 +42,7 @@
   <script>document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('reveal')));</script>
 
   <script src="lab6.js"></script>
+  <script src="router.js"></script>
   <script>
     (function () {
       const u = document.getElementById('l_username');
@@ -63,10 +64,10 @@
           const step = await LAB6.login(name, pass);
           if(step === 'mfa'){
             out.textContent = 'MFA включена. Переходим к подтверждению…';
-            setTimeout(()=>location.href='mfa.html', 500);
+            setTimeout(()=>location.href='mfa', 500);
           }else{
             out.textContent = 'Вход выполнен. Открываю панель…';
-            setTimeout(()=>location.href='app.html', 500);
+            setTimeout(()=>location.href='app', 500);
           }
         }catch(e){ out.textContent = e.message || 'Ошибка входа'; }
       }

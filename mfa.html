@@ -12,11 +12,11 @@
     <div class="container wrap">
       <div class="logo">gitububkm</div>
       <div class="links">
-        <a href="login.html">Авторизация</a>
-        <a href="index.html#lab6-entry">ЛР-6</a>
+        <a href="login">Авторизация</a>
+        <a href="index#lab6-entry">ЛР-6</a>
       </div>
       <div class="actions">
-        <a class="btn secondary" href="index.html">На главную</a>
+        <a class="btn secondary" href="index">На главную</a>
       </div>
     </div>
   </nav>
@@ -45,6 +45,7 @@
 
   <script>document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('reveal')));</script>
   <script src="lab6.js"></script>
+  <script src="router.js"></script>
   <script>
     (function () {
       const out = document.getElementById('mfa_log');
@@ -62,7 +63,7 @@
         try{
           await LAB6.verifyMFA(code);
           out.textContent='MFA подтверждена. Открываю панель…';
-          setTimeout(()=>location.href='app.html', 600);
+          setTimeout(()=>location.href='app', 600);
         }catch(e){ out.textContent = e.message || 'Неверный или истёкший код'; }
       }
 

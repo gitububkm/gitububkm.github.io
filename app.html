@@ -12,7 +12,7 @@
     <div class="container wrap">
       <div class="logo">gitububkm</div>
       <div class="links">
-        <a href="index.html#lab6-entry">ЛР-6</a>
+        <a href="index#lab6-entry">ЛР-6</a>
       </div>
       <div class="actions">
         <button class="btn secondary" id="logout" type="button">Выйти</button>
@@ -87,10 +87,11 @@
 
   <script>document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('reveal')));</script>
   <script src="lab6.js"></script>
+  <script src="router.js"></script>
   <script>
     (function () {
-      if (!window.LAB6) { alert('lab6.js не найден'); location.replace('login.html'); return; }
-      if (!LAB6.current()) { location.replace('login.html'); return; }
+      if (!window.LAB6) { alert('lab6.js не найден'); location.replace('login'); return; }
+      if (!LAB6.current()) { location.replace('login'); return; }
 
       const stateBox = document.getElementById('state');
       function renderState(){
@@ -104,7 +105,7 @@
       }
       renderState();
 
-      document.getElementById('logout').onclick = ()=>{ LAB6.logout(); location.replace('login.html'); };
+      document.getElementById('logout').onclick = ()=>{ LAB6.logout(); location.replace('login'); };
 
       document.getElementById('a_user').onclick   = async ()=> document.getElementById('a_log').textContent   = await LAB6.call('user').catch(e=>e.message);
       document.getElementById('a_admin').onclick  = async ()=> document.getElementById('a_log').textContent   = await LAB6.call('admin').catch(e=>e.message);
@@ -114,7 +115,7 @@
         const o = document.getElementById('p_old').value, n = document.getElementById('p_new').value;
         const m = await LAB6.changePassword(o, n).catch(e=>e.message);
         document.getElementById('p_log').textContent = m;
-        if (m.startsWith('OK')) setTimeout(()=> location.replace('login.html'), 800);
+        if (m.startsWith('OK')) setTimeout(()=> location.replace('login'), 800);
       };
 
       document.getElementById('mfa_enable').onclick  = async ()=> document.getElementById('mfa_log').textContent  = await LAB6.setMFA(true).catch(e=>e.message);
@@ -127,8 +128,8 @@
       };
 
       document.getElementById('s_list').onclick     = ()=> document.getElementById('s_log').textContent = LAB6.listSessions();
-      document.getElementById('s_kill').onclick     = ()=> { LAB6.killCurrent();  document.getElementById('s_log').textContent = 'Текущая сессия завершена'; setTimeout(()=>location.replace('login.html'), 600); };
-      document.getElementById('s_kill_all').onclick = ()=> { LAB6.killAllMine();   document.getElementById('s_log').textContent = 'Все сессии пользователя завершены'; setTimeout(()=>location.replace('login.html'), 600); };
+      document.getElementById('s_kill').onclick     = ()=> { LAB6.killCurrent();  document.getElementById('s_log').textContent = 'Текущая сессия завершена'; setTimeout(()=>location.replace('login'), 600); };
+      document.getElementById('s_kill_all').onclick = ()=> { LAB6.killAllMine();   document.getElementById('s_log').textContent = 'Все сессии пользователя завершены'; setTimeout(()=>location.replace('login'), 600); };
     })();
   </script>
 </body>
