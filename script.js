@@ -101,36 +101,36 @@
       const cancel  = document.getElementById('secretCancel');
       const panel   = document.getElementById('secretPanel');
 
-      function computePassword(){
-        const src = document.documentElement.innerHTML;
-        const digits = Array.from(src).filter(ch => ch >= '0' && ch <= '9').map(ch => ch.charCodeAt(0));
-        let seed = 0 >>> 0;
-        for (let i=0;i<digits.length;i++) seed = ((seed*131) + digits[i]) >>> 0;
-        function rnd(){ seed = (seed*1664525 + 1013904223) >>> 0; return seed / 4294967296; }
-        let v = 0 >>> 0;
-        const loops = Math.min(64, (digits.length || 8) + 6);
-        for (let i=0;i<loops;i++){
-          const r = Math.floor(rnd()*1e6) >>> 0;
-          v ^= (r & 0xffff);
-          v  = (v + ((seed >>> (i%24)) & 255)) >>> 0;
-          v  = Math.imul(v, 2654435761) >>> 0;
-        }
-        const lines = src.split('\n').length;
-        v ^= Math.imul(lines, (src.length % 997)) >>> 0;
-        const a=(v%7), b=(v%7), c=(v^v);
-        return ((a-b)|c)+1; // всегда 1
+      // Захешированный правильный пароль (SHA-256 хеш от "1")
+      const CORRECT_PASSWORD_HASH = "6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b";
+
+      async function hashPassword(password) {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       }
 
       const openModal  = () => { modal.classList.add('open'); modal.setAttribute('aria-hidden','false'); input.value=''; setTimeout(()=>input.focus(),10); };
       const closeModal = () => { modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); };
 
       async function tryUnlock(){
-        const expected = computePassword();
-        const provided = Number(input.value.trim());
-        if(Number.isFinite(provided) && provided === expected){
-          closeModal();
-          panel.hidden = false; panel.setAttribute('aria-hidden','false');
-          panel.scrollIntoView({ behavior:'smooth', block:'start' });
+        const provided = input.value.trim();
+        if(provided){
+          // Добавляем небольшую задержку для предотвращения brute force
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          const hashedProvided = await hashPassword(provided);
+          if(hashedProvided === CORRECT_PASSWORD_HASH){
+            closeModal();
+            panel.hidden = false; panel.setAttribute('aria-hidden','false');
+            panel.scrollIntoView({ behavior:'smooth', block:'start' });
+          } else {
+            const sheet = modal.querySelector('.sheet');
+            sheet.classList.remove('shake'); sheet.offsetWidth; sheet.classList.add('shake');
+            input.select();
+          }
         } else {
           const sheet = modal.querySelector('.sheet');
           sheet.classList.remove('shake'); sheet.offsetWidth; sheet.classList.add('shake');
