@@ -221,23 +221,18 @@ def collect():
             data_parts.append(f'Content-Disposition: form-data; name="document"; filename="{filename}"\r\n'.encode())
             data_parts.append(b'Content-Type: text/plain\r\n\r\n')
             data_parts.append(enriched_content.encode('utf-8'))
+            data_parts.append(f'\r\n--{boundary}\r\n'.encode())
             
             # Добавляем кнопку "Удалить" под каждым сообщением
-            import base64
-            message_id_to_delete = base64.b64encode(str(int(datetime.now().timestamp() * 1000)).encode()).decode('utf-8')[:16]
-            delete_button_data = f'delete_{message_id_to_delete}'
-            
             # reply_markup для кнопки
             reply_markup = {
                 'inline_keyboard': [[
-                    {'text': '🗑️ Удалить это сообщение', 'callback_data': delete_button_data}
+                    {'text': '🗑️ Удалить это сообщение', 'callback_data': 'delete_msg'}
                 ]]
             }
             
-            data_parts.append(f'\r\n--{boundary}\r\n'.encode())
             data_parts.append(b'Content-Disposition: form-data; name="reply_markup"\r\n\r\n')
             data_parts.append(_json.dumps(reply_markup).encode('utf-8'))
-            
             data_parts.append(f'\r\n--{boundary}--\r\n'.encode())
             
             body = b''.join(data_parts)
