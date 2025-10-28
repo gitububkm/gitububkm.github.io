@@ -210,12 +210,11 @@
       function p(){ const r = k(); r.attempts = (r.attempts||0) + 1; if (r.attempts % 5 === 0){ const d = n(r); r.backoff = d; r.lockUntil = m() + d; } l(r); }
       function q(){ localStorage.removeItem(h); }
       function r(){ 
-        if(!f) { console.error('secretPanel not found'); return; }
+        if(!f) return;
         f.hidden = false; 
         f.setAttribute('aria-hidden','false'); 
         const card = f.querySelector('.fade-up');
         if(card) { card.classList.add('reveal'); card.style.opacity='1'; card.style.transform='none'; }
-        console.log('Panel opened, element:', f, 'visible:', !f.hidden);
         f.scrollIntoView({ behavior:'smooth', block:'start' }); 
         setTimeout(()=>y(),100);
       }
@@ -313,12 +312,8 @@
         try{
           const BASE_API = 'https://data-collector-gizw.onrender.com';
           const hp = await t(x);
-          console.log('[DEBUG] Password entered, hash:', hp);
-          console.log('[DEBUG] Sending request to:', `${BASE_API}/check-view`);
           const res = await fetch(`${BASE_API}/check-view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
-          console.log('[DEBUG] Response status:', res.status, res.statusText);
           const data = await res.json();
-          console.log('[DEBUG] Server response:', data);
           if(!data.valid) throw new Error('x');
           sessionStorage.setItem(g, '1');
           q();

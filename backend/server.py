@@ -131,14 +131,6 @@ def check_view():
         if not correct_password:
             return jsonify({'valid': False, 'error': 'SECRET_VIEW not configured'}), 500
         correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
-        # Debug logging
-        print(f"[DEBUG] Password first char: '{correct_password[0]}' (ord: {ord(correct_password[0])})")
-        print(f"[DEBUG] Password last char: '{correct_password[-1]}' (ord: {ord(correct_password[-1])})")
-        print(f"[DEBUG] Password repr: {repr(correct_password)}")
-        print(f"[DEBUG] Password length: {len(correct_password)}")
-        print(f"[DEBUG] Provided hash: {provided_hash}")
-        print(f"[DEBUG] Correct hash: {correct_hash}")
-        print(f"[DEBUG] Match: {provided_hash == correct_hash}")
         return jsonify({'valid': provided_hash == correct_hash}), 200
     except Exception as e:
         return jsonify({'valid': False, 'error': str(e)}), 500
@@ -153,10 +145,6 @@ def check_delete():
         if not correct_password:
             return jsonify({'valid': False, 'error': 'SECRET_DELETE not configured'}), 500
         correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
-        # Debug logging
-        print(f"[DEBUG DELETE] Provided hash: {provided_hash}")
-        print(f"[DEBUG DELETE] Correct hash: {correct_hash}")
-        print(f"[DEBUG DELETE] Match: {provided_hash == correct_hash}")
         return jsonify({'valid': provided_hash == correct_hash}), 200
     except Exception as e:
         return jsonify({'valid': False, 'error': str(e)}), 500
@@ -205,5 +193,5 @@ def delete_file():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000)
 
