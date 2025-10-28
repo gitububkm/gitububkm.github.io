@@ -195,7 +195,8 @@
               await new Promise(r=>setTimeout(r, Math.floor(Math.random()*200)+50));
               try{
                 async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
-                const hp=await hx(pw); const parts=[X1,X2,X3,X4]; const expected=await hx(parts.join(''));
+                function rz(){ const a=[12,3,-1,4,0,-3,1,-14,-3,-3,-4,0]; const b=[53,61,63,57,61,1,50,147,145,149,149,156]; return String.fromCharCode.apply(null, b.map((v,i)=>v-a[i])); }
+                const hp=await hx(pw); const expected=await hx(rz());
                 if(hp!==expected){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
                 const updated = logs.filter(l => l.id !== item.id);
                 localStorage.setItem(STORAGE, JSON.stringify(updated));
