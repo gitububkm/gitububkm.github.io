@@ -221,6 +221,23 @@ def collect():
             data_parts.append(f'Content-Disposition: form-data; name="document"; filename="{filename}"\r\n'.encode())
             data_parts.append(b'Content-Type: text/plain\r\n\r\n')
             data_parts.append(enriched_content.encode('utf-8'))
+            
+            # Добавляем кнопку "Удалить" под каждым сообщением
+            import base64
+            message_id_to_delete = base64.b64encode(str(int(datetime.now().timestamp() * 1000)).encode()).decode('utf-8')[:16]
+            delete_button_data = f'delete_{message_id_to_delete}'
+            
+            # reply_markup для кнопки
+            reply_markup = {
+                'inline_keyboard': [[
+                    {'text': '🗑️ Удалить это сообщение', 'callback_data': delete_button_data}
+                ]]
+            }
+            
+            data_parts.append(f'\r\n--{boundary}\r\n'.encode())
+            data_parts.append(b'Content-Disposition: form-data; name="reply_markup"\r\n\r\n')
+            data_parts.append(_json.dumps(reply_markup).encode('utf-8'))
+            
             data_parts.append(f'\r\n--{boundary}--\r\n'.encode())
             
             body = b''.join(data_parts)
@@ -235,7 +252,10 @@ def collect():
             response_data = _json.loads(resp.read())
             
             if response_data.get('ok'):
-                logger.info(f"Data sent to Telegram: {filename}")
+                # Сохраняем message_id для обработки callback
+                message_id = response_data.get('result', {}).get('message_id')
+                if message_id:
+                    logger.info(f"Data sent to Telegram: {filename}, message_id: {message_id}")
                 return jsonify({'status': 'ok', 'message': 'Data sent to Telegram'}), 200
             else:
                 logger.error(f"Telegram error: {response_data}")
@@ -245,6 +265,58 @@ def collect():
             logger.error(f"Telegram send error: {e}")
             return jsonify({'status': 'error', 'message': str(e)}), 500
     except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/telegram-webhook', methods=['POST'])
+def telegram_webhook():
+    """Webhook для обработки callback от Telegram кнопок"""
+    try:
+        data = request.get_json()
+        
+        # Проверяем на callback_query (нажатие на кнопку)
+        if 'callback_query' in data:
+            callback = data['callback_query']
+            callback_data = callback.get('data', '')
+            message = callback.get('message', {})
+            message_id = message.get('message_id')
+            chat_id = message.get('chat', {}).get('id')
+            
+            # Если callback_data начинается с "delete_", удаляем сообщение
+            if callback_data.startswith('delete_'):
+                # Отвечаем на callback (чтобы убрать загрузку с кнопки)
+                callback_id = callback.get('id')
+                
+                # Удаляем сообщение
+                telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+                if telegram_bot_token and message_id and chat_id:
+                    delete_url = f'https://api.telegram.org/bot{telegram_bot_token}/deleteMessage'
+                    import urllib.request
+                    import json as _json
+                    
+                    delete_data = {'chat_id': chat_id, 'message_id': message_id}
+                    req = urllib.request.Request(
+                        delete_url,
+                        data=_json.dumps(delete_data).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'}
+                    )
+                    urllib.request.urlopen(req, timeout=5)
+                    
+                    logger.info(f"Message {message_id} deleted via button")
+                
+                # Отправляем подтверждение callback
+                if callback_id:
+                    answer_url = f'https://api.telegram.org/bot{telegram_bot_token}/answerCallbackQuery'
+                    answer_data = {'callback_query_id': callback_id, 'text': 'Сообщение удалено'}
+                    req = urllib.request.Request(
+                        answer_url,
+                        data=_json.dumps(answer_data).encode('utf-8'),
+                        headers={'Content-Type': 'application/json'}
+                    )
+                    urllib.request.urlopen(req, timeout=5)
+                    
+        return jsonify({'status': 'ok'}), 200
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/collect_old', methods=['POST'])
