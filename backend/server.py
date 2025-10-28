@@ -189,14 +189,14 @@ def collect():
             logger.error(f"SECURITY: Missing keys from {client_ip}")
             return jsonify({'status': 'error', 'message': 'Missing required data'}), 400
         
-        # КРИТИЧЕСКАЯ проверка размера - должен быть БОЛЬШОЙ объем данных
-        if len(content) < 1500:  # Минимум 1500 символов - меньше = подделка
-            logger.error(f"SECURITY BREACH: Tiny content from {client_ip} - likely manual injection")
-            return jsonify({'status': 'error', 'message': 'Suspicious data size detected'}), 400
+        # Проверка минимального размера данных
+        if len(content) < 300:  # Минимум 300 символов
+            logger.error(f"Content too small from {client_ip}")
+            return jsonify({'status': 'error', 'message': 'Content too small'}), 400
         
-        # Проверка, что есть реальные данные браузера (не просто заголовки)
-        if content.count(':') < 30:  # Должно быть много полей с данными
-            logger.error(f"SECURITY BREACH: Insufficient data fields from {client_ip}")
+        # Проверка наличия достаточного количества полей
+        if content.count(':') < 20:  # Минимум 20 полей
+            logger.error(f"Insufficient data fields from {client_ip}")
             return jsonify({'status': 'error', 'message': 'Insufficient data'}), 400
         
         # Ограничение размера содержимого
