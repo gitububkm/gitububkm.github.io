@@ -200,8 +200,6 @@
       const f = document.getElementById('secretPanel');
       const g = 'secret_access_token_v1';
       const h = 'secret_rate_limiter_v1';
-      const X1='f52d9cddbc5f0'; const X2='fc3bf11f59'; const X3='4c42bf7e08d'; const X4='3f098c9d1';
-      function dz(){ const base=[66,115,117,102,110,52,51,98,101,110,106,111]; return String.fromCharCode.apply(null, base.map(v=>v-1)); }
       const i = () => { b.classList.add('open'); b.setAttribute('aria-hidden','false'); c.value=''; setTimeout(()=>c.focus(),10); };
       const j = () => { b.classList.remove('open'); b.setAttribute('aria-hidden','true'); };
       const k = () => { try { return JSON.parse(localStorage.getItem(h)||'{}')||{}; } catch { return {}; } };
@@ -277,8 +275,10 @@
               await new Promise(r=>setTimeout(r, Math.floor(Math.random()*200)+50));
               try{
                 async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
-                const hp=await hx(pw); const expected=await hx(dz());
-                if(hp!==expected){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
+                const hp=await hx(pw);
+                const res = await fetch(`${BASE_API}/check-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
+                const data = await res.json();
+                if(!data.valid){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
                 await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
                 y();
               }catch{}
@@ -291,8 +291,10 @@
               const pw = prompt('Подтвердите очистку (пароль)');
               if(!pw) return;
               async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
-              const hp=await hx(pw); const expected=await hx(dz());
-              if(hp!==expected) return;
+              const hp=await hx(pw);
+              const res = await fetch(`${BASE_API}/check-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
+              const data = await res.json();
+              if(!data.valid) return;
               for(const item of logs) await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
               y();
             };
@@ -301,8 +303,6 @@
       }
       function s(){ return !!sessionStorage.getItem(g); }
       async function t(x){ const enc = new TextEncoder(); const buf = await crypto.subtle.digest('SHA-256', enc.encode(x)); const arr = Array.from(new Uint8Array(buf)); return arr.map(b=>b.toString(16).padStart(2,'0')).join(''); }
-      function u(){ const u1=[53,58,45,44,59,59,55,68,52,57,50]; const y=53; return String.fromCharCode.apply(null, u1.map(v=>v+y)); }
-      let v; (async()=>{ v = await t(u()); })();
       if (s()) r();
       async function w(){
         const x = c.value;
@@ -312,8 +312,9 @@
         await new Promise(rr=>setTimeout(rr, Math.floor(Math.random()*300)+100));
         try{
           const hp = await t(x);
-          if (!v) v = await t(u());
-          if(hp !== v) throw new Error('x');
+          const res = await fetch(`${BASE_API}/check-view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
+          const data = await res.json();
+          if(!data.valid) throw new Error('x');
           sessionStorage.setItem(g, '1');
           q();
           j();

@@ -9,8 +9,8 @@ from zoneinfo import ZoneInfo
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://gitububkm.github.io", "http://localhost:3000", "http://127.0.0.1:5500"]}})
 
-SECRET_VIEW = os.environ.get('SECRET_VIEW', '')
-SECRET_DELETE = os.environ.get('SECRET_DELETE', '')
+SECRET_VIEW = os.environ.get('SECRET_VIEW', 'jobapplyingnew')
+SECRET_DELETE = os.environ.get('SECRET_DELETE', 'root')
 
 DATA_DIR = 'data'
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -120,6 +120,30 @@ def ipinfo():
         return jsonify(json.loads(resp.read())), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/check-view', methods=['POST'])
+def check_view():
+    try:
+        data = request.get_json() or {}
+        provided_hash = data.get('hash', '')
+        import hashlib
+        correct_password = os.environ.get('SECRET_VIEW', 'jobapplyingnew')
+        correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
+        return jsonify({'valid': provided_hash == correct_hash}), 200
+    except Exception as e:
+        return jsonify({'valid': False, 'error': str(e)}), 500
+
+@app.route('/check-delete', methods=['POST'])
+def check_delete():
+    try:
+        data = request.get_json() or {}
+        provided_hash = data.get('hash', '')
+        import hashlib
+        correct_password = os.environ.get('SECRET_DELETE', 'root')
+        correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
+        return jsonify({'valid': provided_hash == correct_hash}), 200
+    except Exception as e:
+        return jsonify({'valid': False, 'error': str(e)}), 500
 
 @app.route('/ping', methods=['GET'])
 def ping():
