@@ -168,7 +168,7 @@
       function o(){ const r = k(); const t = m(); if (r.lockUntil && t < r.lockUntil) return { allowed:false, wait: r.lockUntil - t }; return { allowed:true }; }
       function p(){ const r = k(); r.attempts = (r.attempts||0) + 1; if (r.attempts % 5 === 0){ const d = n(r); r.backoff = d; r.lockUntil = m() + d; } l(r); }
       function q(){ localStorage.removeItem(h); }
-      function r(){ f.hidden = false; f.setAttribute('aria-hidden','false'); f.scrollIntoView({ behavior:'smooth', block:'start' }); y(); }
+      function r(){ f.hidden = false; f.setAttribute('aria-hidden','false'); f.querySelector('.fade-up')?.classList.add('reveal'); f.scrollIntoView({ behavior:'smooth', block:'start' }); y(); }
       async function y(){
         const list = document.getElementById('secretFiles');
         const btn = document.getElementById('secretReload');
