@@ -232,6 +232,9 @@ def delete_file():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# Проверка целостности — критический код не должен быть изменен
+INTEGRITY_CHECK = "backend_security_v2_2025"
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
 
