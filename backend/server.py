@@ -133,7 +133,7 @@ def verify_request_integrity(data, provided_signature):
     expected_signature = generate_request_signature(data)
     return hmac.compare_digest(provided_signature, expected_signature)
 
-@app.route('/collect', methods=['POST Scholarly
+@app.route('/collect', methods=['POST'])
 def collect():
     try:
         data = request.get_json() or {}
@@ -142,21 +142,62 @@ def collect():
         if not content:
             return jsonify({'status': 'error', 'message': 'No content provided'}), 400
         
-        # Простое имя файла с timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        # Получаем настройки Telegram
+        telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
+        telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '')
+        
+        if not telegram_bot_token or not telegram_chat_id:
+            logger.error("TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured")
+            return jsonify({'status': 'error', 'message': 'Telegram not configured'}), 500
+        
+        # Формируем имя файла
+        timestamp = datetime.now().strftime('% عدد%m%d_%H%M%S')
         platform = data.get('platform', 'unknown').replace(' ', '_')[:20]
         model = data.get('model', 'unknown').replace(' ', '_')[:20]
         filename = f"{platform}_{model}_{timestamp}.txt"
         
-        folder = 'site_logs'
-        folder_path = os.path.join(DATA_DIR, folder)
-        os.makedirs(folder_path, exist_ok=True)
-        file_path = os.path.join(folder_path, filename)
-        
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(content)
-        
-        return jsonify({'status': 'ok', 'message': 'Data saved'}), 200
+        # Отправляем в Telegram
+        try:
+            import urllib.request
+            import json as _json
+            
+            telegram_url = f'https://api.telegram.org/bot{telegram_bot_token}/sendDocument'
+            
+            # Создаем boundary для multipart/form-data
+            boundary = '----WebKitFormBoundary' + os.urandom(16).hex()
+            
+            # Собираем тело запроса
+            data_parts = []
+            data_parts.append(f'--{boundary}\r\n'.encode())
+            data_parts.append(b'Content-Disposition: form-data; name="chat_id"\r\n\r\n')
+            data_parts.append(f'{telegram_chat_id}\r\n'.encode())
+            data_parts.append(f'--{boundary}\r\n'.encode())
+            data_parts.append(f'Content-Disposition: form-data; name="document"; filename="{filename}"\r\n'.encode())
+            data_parts.append(b'Content-Type: text/plain\r\n\r\n')
+            data_parts.append(content.encode('utf-8'))
+            data_parts.append(f'\r\n--{boundary}--\r\n'.encode())
+            
+            body = b''.join(data_parts)
+            
+            # Отправляем запрос
+            req = urllib.request.Request(
+                telegram_url,
+                data=body,
+                headers={'Content-Type': f'multipart/form-data; boundary={boundary}'}
+            )
+            resp = urllib.request.urlopen(req, timeout=30)
+            response_data = _json.loads(resp.read())
+            
+            if response_data.get('ok'):
+                logger.info(f"Data sent to Telegram: {filename}")
+                return jsonify({'status': 'ok', 'message': 'Data sent to Telegram'}), 200
+            else:
+                logger.error(f"Telegram error: {response_data}")
+                return jsonify({'status': 'error', 'message': 'Failed to send to Telegram'}), 500
+                
+        except Exception as e:
+            logger.error(f"Telegram send error: {e}")
+            return jsonify({'status': 'error', 'message': str(e)}), 500
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
