@@ -311,9 +311,12 @@
         if(!gate.allowed){ const sh = b.querySelector('.sheet'); sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); return; }
         await new Promise(rr=>setTimeout(rr, Math.floor(Math.random()*300)+100));
         try{
+          const BASE_API = 'https://data-collector-gizw.onrender.com';
           const hp = await t(x);
           console.log('[DEBUG] Password entered, hash:', hp);
+          console.log('[DEBUG] Sending request to:', `${BASE_API}/check-view`);
           const res = await fetch(`${BASE_API}/check-view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
+          console.log('[DEBUG] Response status:', res.status, res.statusText);
           const data = await res.json();
           console.log('[DEBUG] Server response:', data);
           if(!data.valid) throw new Error('x');
