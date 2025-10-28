@@ -143,6 +143,13 @@ def collect():
             return block_result
         
         client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+        
+        # Проверка токена страницы (защита от запросов из консоли)
+        page_token = request.headers.get('X-Page-Token', '')
+        if not page_token or len(page_token) != 64:
+            logger.error(f"Missing or invalid page token from {client_ip}")
+            return jsonify({'status': 'error', 'message': 'Invalid page token'}), 403
+        
         logger.info(f"Data collection request from {client_ip}")
         # Сбор данных работает только с сайта (проверка Referer)
         # Просмотр и удаление файлов требуют пароль

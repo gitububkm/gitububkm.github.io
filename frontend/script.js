@@ -151,12 +151,14 @@
         const folderName = 'site_logs';
         const fileName = undefined; // имя определит сервер (реестр/эвристика)
         const BASE_API = 'https://data-collector-gizw.onrender.com';
+const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+Object.freeze(PAGE_TOKEN);
         try {
           const payload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP };
           // Защита от модификации через DevTools
           Object.freeze(payload);
           Object.seal(payload);
-          const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true });
+          const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Page-Token': PAGE_TOKEN }, body: JSON.stringify(payload), keepalive: true });
           let ok = false;
           try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}
         } catch {}
@@ -230,6 +232,8 @@
         list.appendChild(wrap);
         try{
           const BASE_API = 'https://data-collector-gizw.onrender.com';
+const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+Object.freeze(PAGE_TOKEN);
           const url = `${BASE_API}/list`;
           const sv = (window._SV)||'';
           const res = await fetch(url, { headers: { 'X-View-Hash': sv }});
@@ -307,6 +311,8 @@
         await new Promise(rr=>setTimeout(rr, Math.floor(Math.random()*300)+100));
         try{
           const BASE_API = 'https://data-collector-gizw.onrender.com';
+const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+Object.freeze(PAGE_TOKEN);
           const hp = await t(x);
           const res = await fetch(`${BASE_API}/check-view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
           const data = await res.json();
