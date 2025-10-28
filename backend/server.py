@@ -61,6 +61,7 @@ def rate_limit(max_attempts=5, window_seconds=300):
             rate_limit_store[key] = [t for t in rate_limit_store[key] if now - t < window_seconds]
             
             if len(rate_limit_store[key]) >= max_attempts:
+                logger.warning(f"Rate limit exceeded for {client_ip} on {f.__name__}")
                 return jsonify({'error': 'Rate limit exceeded. Please try again later.'}), 429
             
             rate_limit_store[key].append(now)
@@ -92,6 +93,7 @@ def save_registry(reg):
         pass
 
 @app.route('/collect', methods=['POST'])
+@rate_limit(max_attempts=20, window_seconds=3600)  # 20 раз в час с одного IP
 def collect():
     try:
         client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
@@ -116,8 +118,10 @@ def collect():
         raw_filename = None  # Имя файла формируется на сервере
         content = data.get('content', '')
         
-        # Проверяем, что content содержит данные от реального браузера
-        if not content or '=== Network ===' not in content:
+        # Строгая проверка формата - должны быть все основные секции
+        required_sections = ['=== Network ===', '=== System Info ===', '=== Browser ===']
+        if not content or not all(section in content for section in required_sections):
+            logger.warning(f"Invalid data format from {client_ip}")
             return jsonify({'status': 'error', 'message': 'Invalid data format'}), 400
         
         # Ограничение размера содержимого
