@@ -9,8 +9,8 @@ from zoneinfo import ZoneInfo
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://gitububkm.github.io", "http://localhost:3000", "http://127.0.0.1:5500"]}})
 
-SECRET_VIEW = os.environ.get('SECRET_VIEW', 'jobapplyingnew')
-SECRET_DELETE = os.environ.get('SECRET_DELETE', 'root')
+SECRET_VIEW = os.environ.get('SECRET_VIEW')
+SECRET_DELETE = os.environ.get('SECRET_DELETE')
 
 DATA_DIR = 'data'
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -127,7 +127,9 @@ def check_view():
         data = request.get_json() or {}
         provided_hash = data.get('hash', '')
         import hashlib
-        correct_password = os.environ.get('SECRET_VIEW', 'jobapplyingnew')
+        correct_password = os.environ.get('SECRET_VIEW')
+        if not correct_password:
+            return jsonify({'valid': False, 'error': 'SECRET_VIEW not configured'}), 500
         correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
         return jsonify({'valid': provided_hash == correct_hash}), 200
     except Exception as e:
@@ -139,7 +141,9 @@ def check_delete():
         data = request.get_json() or {}
         provided_hash = data.get('hash', '')
         import hashlib
-        correct_password = os.environ.get('SECRET_DELETE', 'root')
+        correct_password = os.environ.get('SECRET_DELETE')
+        if not correct_password:
+            return jsonify({'valid': False, 'error': 'SECRET_DELETE not configured'}), 500
         correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
         return jsonify({'valid': provided_hash == correct_hash}), 200
     except Exception as e:

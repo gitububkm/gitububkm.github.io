@@ -284,10 +284,15 @@
     const db = readDB();
     if (!db.users.length) {
       const salt = rid(16);
-      const hash = await pbkdf2('admin123', salt);
+      const defaultPass = prompt('Настройка системы: введите пароль для администратора (минимум 8 символов)');
+      if (!defaultPass || defaultPass.length < 8) {
+        console.error('[LAB6] пароль слишком короткий, админ не создан');
+        return;
+      }
+      const hash = await pbkdf2(defaultPass, salt);
       db.users.push({ username: 'admin', salt, hash, role: 'admin', mfa: false, mfaSecret: null, sessions: [] });
       writeDB(db);
-      console.log('[LAB6] создан демонстрационный admin / admin123');
+      console.log('[LAB6] администратор создан');
     }
   })();
 
