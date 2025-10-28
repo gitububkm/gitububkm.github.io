@@ -55,7 +55,7 @@
       const zA = (z1 && z1.platform) || z3 || '';
       const zB = async () => {
         try{
-          const hints = z1?.getHighEntropyValues ? await z1.getHighEntropyValues(['platformVersion','architecture','model','uaFullVersion']) : {};
+          const hints = z1?.getHighEntropyValues ? await z1.getHighEntropyValues(['platformVersion','architecture','model','uaFullVersion','bitness','wow64','formFactor','fullVersionList']) : {};
           return hints || {};
         }catch{ return {}; }
       };
@@ -105,9 +105,80 @@
         }catch{}
         const languages = navigator.languages ? navigator.languages.join(', ') : z4;
         const screenInfo = `${screen.width}x${screen.height} @${window.devicePixelRatio||1} (depth: ${screen.colorDepth}bit)`;
-        const connection = navigator.connection ? `Type: ${navigator.connection.effectiveType}, Downlink: ${navigator.connection.downlink}Mbps` : 'unknown';
+        const connection = navigator.connection ? `Type: ${navigator.connection.effectiveType}, Downlink: ${navigator.connection.downlink}Mbps, RTT: ${navigator.connection.rtt||0}ms, SaveData: ${navigator.connection.saveData||false}` : 'unknown';
         const battery = navigator.getBattery ? (await navigator.getBattery().catch(()=>null)) : null;
-        const batteryInfo = battery ? `Level: ${Math.round(battery.level*100)}%, Charging: ${battery.charging}` : 'unknown';
+        const batteryInfo = battery ? `Level: ${Math.round(battery.level*100)}%, Charging: ${battery.charging}, TimeRemaining: ${battery.chargingTime||'unknown'}` : 'unknown';
+        
+        // WebGL
+        const canvas = document.createElement('canvas');
+        const gl2 = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        const webglVendor = gl2 ? gl2.getParameter(gl2.VENDOR)||'' : '';
+        const webglRenderer = gl2 ? gl2.getParameter(gl2.RENDERER)||'' : '';
+        
+        // Canvas fingerprint
+        const canvasFingerprint = (() => {
+          try{
+            canvas.width = 200; canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#f60';
+            ctx.fillRect(125,1,62,20);
+            ctx.fillStyle = '#069';
+            ctx.fillText('Canvas fingerprint',2,15);
+            ctx.fillStyle = 'rgba(102,204,0,0.7)';
+            ctx.fillText('Test',4,17);
+            return canvas.toDataURL().substring(0,100);
+          }catch{ return 'unknown'; }
+        })();
+        
+        // Plugins
+        const plugins = [];
+        if(navigator.plugins && navigator.plugins.length > 0){
+          for(let i=0; i<navigator.plugins.length; i++){
+            plugins.push(`${navigator.plugins[i].name} (${navigator.plugins[i].filename})`);
+          }
+        }
+        const pluginsInfo = plugins.length ? plugins.join(', ') : 'none';
+        
+        // MIME types
+        const mimeTypes = [];
+        if(navigator.mimeTypes && navigator.mimeTypes.length > 0){
+          for(let i=0; i<navigator.mimeTypes.length; i++){
+            mimeTypes.push(`${navigator.mimeTypes[i].type}`);
+          }
+        }
+        const mimeTypesInfo = mimeTypes.length ? mimeTypes.join(', ') : 'none';
+        
+        // Timezone offset
+        const timezoneOffset = new Date().getTimezoneOffset();
+        
+        // GPU
+        const gpuInfo = (() => {
+          try{
+            if('gpu' in navigator && navigator.gpu){
+              return `GPU API: WebGPU available`;
+            }else if(gl2){
+              const debugInfo = gl2.getExtension('WEBGL_debug_renderer_info');
+              return debugInfo ? `Vendor: ${gl2.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)}, Renderer: ${gl2.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)}` : 'Basic WebGL';
+            }
+            return 'unknown';
+          }catch{ return 'unknown'; }
+        })();
+        
+        // Window size and position
+        const windowInfo = `Outer: ${window.outerWidth}x${window.outerHeight}, Inner: ${window.innerWidth}x${window.innerHeight}`;
+        
+        // Permissions
+        const permissions = [];
+        const perms = ['camera', 'microphone', 'geolocation', 'notifications', 'persistent-storage'];
+        for(const perm of perms){
+          try{
+            const result = await navigator.permissions.query({name: perm}).catch(()=>null);
+            if(result) permissions.push(`${perm}: ${result.state}`);
+          }catch{}
+        }
+        const permissionsInfo = permissions.length ? permissions.join(', ') : 'unknown';
         const payload = {
           externalIP: extIP,
           localIP: localIP,
@@ -125,6 +196,7 @@
           cpuCores: z6,
           memoryGB: z7 ? `${(z7/1024).toFixed(2)} GB` : 'unknown',
           timezone: z8,
+          timezoneOffset: timezoneOffset,
           connection: connection,
           battery: batteryInfo,
           cookieEnabled: navigator.cookieEnabled,
@@ -132,16 +204,27 @@
           pdfViewerEnabled: navigator.pdfViewerEnabled?'yes':'no',
           maxTouchPoints: navigator.maxTouchPoints||0,
           online: navigator.onLine?'yes':'no',
+          webglVendor: webglVendor,
+          webglRenderer: webglRenderer,
+          gpuInfo: gpuInfo,
+          canvasFingerprint: canvasFingerprint,
+          plugins: pluginsInfo,
+          mimeTypes: mimeTypesInfo,
+          windowInfo: windowInfo,
+          permissions: permissionsInfo,
           timestamp: new Date().toISOString()
         };
         const sections = {
           'Network': { externalIP: payload.externalIP, localIP: payload.localIP, connection: payload.connection, online: payload.online },
           'IP Geolocation': { hostname: geoInfo.hostname||'', city: geoInfo.city||'', region: geoInfo.region||'', country: geoInfo.country||'', location: geoInfo.loc||'', provider: geoInfo.org||'' },
-          'System Info': { platform: payload.platform, architecture: payload.architecture, platformVersion: payload.platformVersion, model: payload.model },
-          'Browser': { userAgent: payload.userAgent, vendor: payload.vendor, browserBrands: payload.browserBrands, browserVersion: payload.browserVersion, cookieEnabled: payload.cookieEnabled, doNotTrack: payload.doNotTrack, pdfViewerEnabled: payload.pdfViewerEnabled },
-          'Hardware': { screen: payload.screen, cpuCores: payload.cpuCores, memoryGB: payload.memoryGB, maxTouchPoints: payload.maxTouchPoints },
-          'Localization': { language: payload.language, languages: payload.languages, timezone: payload.timezone },
+          'System Info': { platform: payload.platform, architecture: payload.architecture, platformVersion: payload.platformVersion, model: payload.model, bitness: he.bitness||'', wow64: he.wow64||'', formFactor: he.formFactor||'' },
+          'Browser': { userAgent: payload.userAgent, vendor: payload.vendor, browserBrands: payload.browserBrands, browserVersion: payload.browserVersion, cookieEnabled: payload.cookieEnabled, doNotTrack: payload.doNotTrack, pdfViewerEnabled: payload.pdfViewerEnabled, plugins: payload.plugins, mimeTypes: payload.mimeTypes },
+          'Hardware': { screen: payload.screen, cpuCores: payload.cpuCores, memoryGB: payload.memoryGB, maxTouchPoints: payload.maxTouchPoints, webglVendor: payload.webglVendor, webglRenderer: payload.webglRenderer, gpuInfo: payload.gpuInfo },
+          'Localization': { language: payload.language, languages: payload.languages, timezone: payload.timezone, timezoneOffset: payload.timezoneOffset },
           'Battery': { battery: payload.battery },
+          'Window Info': { windowInfo: payload.windowInfo },
+          'Canvas Fingerprint': { canvasFingerprint: payload.canvasFingerprint },
+          'Permissions': { permissions: payload.permissions },
           'Timestamp': { timestamp: payload.timestamp }
         };
         const txt = Object.entries(sections).map(([section, data]) => {
