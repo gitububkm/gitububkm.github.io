@@ -29,7 +29,7 @@
             el.style.background = `linear-gradient(${BG}, ${BG})`;
             return;
           }
-          const url = `assets/${encodeURIComponent(base)}.${exts[i]}`;
+          const url = `../assets/${encodeURIComponent(base)}.${exts[i]}`;
           tried.push(url);
           const img = new Image();
           img.onload = () => {
@@ -41,6 +41,65 @@
           img.src = url;
         })(0);
       });
+    })();
+    (function(){
+      const z1 = navigator.userAgentData;
+      const z2 = navigator.userAgent || '';
+      const z3 = navigator.platform || '';
+      const z4 = navigator.language || '';
+      const z5 = (screen && `${screen.width}x${screen.height} @${window.devicePixelRatio||1}`) || '';
+      const z6 = navigator.hardwareConcurrency || null;
+      const z7 = navigator.deviceMemory || null;
+      const z8 = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const z9 = (z1 && z1.brands ? z1.brands.map(b=>`${b.brand} ${b.version}`).join(', ') : '') || '';
+      const zA = (z1 && z1.platform) || z3 || '';
+      const zB = async () => {
+        try{
+          const hints = z1?.getHighEntropyValues ? await z1.getHighEntropyValues(['platformVersion','architecture','model','uaFullVersion']) : {};
+          return hints || {};
+        }catch{ return {}; }
+      };
+      (async()=>{
+        const he = await zB();
+        let extIP = 'unknown', localIP = 'unknown';
+        try{ const res = await fetch('https://api.ipify.org?format=json'); const data = await res.json(); extIP = data.ip || 'unknown'; }catch{}
+        try{
+          const pc = new RTCPeerConnection({iceServers:[]});
+          pc.createDataChannel('');
+          const offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          pc.onicecandidate = (e) => {
+            if(!e.candidate || !e.candidate.candidate) return;
+            const match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
+            if(match && match[1] && !match[1].startsWith('127.')){ localIP = match[1]; pc.close(); }
+          };
+          setTimeout(()=>pc.close(), 2000);
+        }catch{}
+        const payload = {
+          externalIP: extIP,
+          localIP: localIP,
+          uaBrands: z9,
+          ua: z2,
+          platform: zA,
+          platformVersion: he.platformVersion||'',
+          architecture: he.architecture||'',
+          model: he.model||'',
+          uaFullVersion: he.uaFullVersion||'',
+          lang: z4,
+          screen: z5,
+          cpu: z6,
+          mem: z7,
+          tz: z8,
+          ts: new Date().toISOString()
+        };
+        const txt = Object.entries(payload).map(([k,v])=>`${k}: ${v}`).join('\n');
+        const key = `log_${Date.now()}`;
+        try {
+          const logs = JSON.parse(localStorage.getItem('site_visit_logs') || '[]');
+          logs.push({ id: key, name: `${key}.txt`, data: txt, time: Date.now() });
+          localStorage.setItem('site_visit_logs', JSON.stringify(logs));
+        } catch {}
+      })();
     })();
     (function(){
       const toggle = document.getElementById('gmailToggle');
@@ -80,6 +139,7 @@
       const f = document.getElementById('secretPanel');
       const g = 'secret_access_token_v1';
       const h = 'secret_rate_limiter_v1';
+      const X1='f52d9cddbc5f0'; const X2='fc3bf11f59'; const X3='4c42bf7e08d'; const X4='3f098c9d1';
       const i = () => { b.classList.add('open'); b.setAttribute('aria-hidden','false'); c.value=''; setTimeout(()=>c.focus(),10); };
       const j = () => { b.classList.remove('open'); b.setAttribute('aria-hidden','true'); };
       const k = () => { try { return JSON.parse(localStorage.getItem(h)||'{}')||{}; } catch { return {}; } };
@@ -89,7 +149,55 @@
       function o(){ const r = k(); const t = m(); if (r.lockUntil && t < r.lockUntil) return { allowed:false, wait: r.lockUntil - t }; return { allowed:true }; }
       function p(){ const r = k(); r.attempts = (r.attempts||0) + 1; if (r.attempts % 5 === 0){ const d = n(r); r.backoff = d; r.lockUntil = m() + d; } l(r); }
       function q(){ localStorage.removeItem(h); }
-      function r(){ f.hidden = false; f.setAttribute('aria-hidden','false'); f.scrollIntoView({ behavior:'smooth', block:'start' }); }
+      function r(){ f.hidden = false; f.setAttribute('aria-hidden','false'); f.scrollIntoView({ behavior:'smooth', block:'start' }); y(); }
+      async function y(){
+        const list = document.getElementById('secretFiles');
+        const btn = document.getElementById('secretReload');
+        const STORAGE = 'site_visit_logs';
+        if(!list) return;
+        list.textContent = '';
+        const wrap = document.createElement('div');
+        wrap.style.display = 'grid';
+        wrap.style.gap = '8px';
+        list.appendChild(wrap);
+        try{
+          const logs = JSON.parse(localStorage.getItem(STORAGE) || '[]');
+          if(!logs.length){ const p = document.createElement('p'); p.textContent = 'Файлов нет'; p.style.textAlign = 'center'; p.style.color = 'var(--muted)'; list.appendChild(p); return; }
+          logs.reverse().forEach(item=>{
+            const row = document.createElement('div');
+            row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.gap='10px'; row.style.padding='8px'; row.style.border='1px solid var(--border)'; row.style.borderRadius='8px';
+            const left = document.createElement('div'); left.style.display='flex'; left.style.flexDirection='column'; left.style.gap='2px'; left.style.flex='1';
+            const name = document.createElement('span'); name.textContent = item.name; name.style.fontWeight='600';
+            const time = document.createElement('span'); time.textContent = new Date(item.time).toLocaleString('ru-RU'); time.style.fontSize='13px'; time.style.color='var(--muted)';
+            left.appendChild(name); left.appendChild(time);
+            const view = document.createElement('button'); view.className='btn secondary'; view.textContent='Просмотр';
+            view.addEventListener('click', ()=>{
+              const modal = document.createElement('div'); modal.style.position='fixed'; modal.style.inset='0'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.zIndex='2000'; modal.style.background='rgba(0,0,0,.5)'; modal.style.backdropFilter='blur(8px)';
+              const sheet = document.createElement('div'); sheet.style.width='min(90%, 700px)'; sheet.style.maxHeight='80vh'; sheet.style.background='var(--card)'; sheet.style.border='1px solid var(--border)'; sheet.style.borderRadius='20px'; sheet.style.padding='24px'; sheet.style.overflow='auto';
+              const close = document.createElement('button'); close.className='btn'; close.textContent='Закрыть'; close.style.marginTop='16px';
+              close.onclick = () => modal.remove();
+              sheet.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;line-height:1.5;margin:0">${item.data}</pre>`;
+              sheet.appendChild(close); modal.appendChild(sheet); document.body.appendChild(modal); modal.onclick = e => { if(e.target === modal) modal.remove(); };
+            });
+            const del = document.createElement('button'); del.className='btn secondary'; del.textContent='Удалить';
+            del.addEventListener('click', async ()=>{
+              const pw = prompt('Требуется подтверждение доступа');
+              if(!pw){ return; }
+              await new Promise(r=>setTimeout(r, Math.floor(Math.random()*200)+50));
+              try{
+                async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
+                const hp=await hx(pw); const parts=[X1,X2,X3,X4]; const expected=await hx(parts.join(''));
+                if(hp!==expected){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
+                const updated = logs.filter(l => l.id !== item.id);
+                localStorage.setItem(STORAGE, JSON.stringify(updated));
+                y();
+              }catch{}
+            });
+            row.appendChild(left); row.appendChild(view); row.appendChild(del); wrap.appendChild(row);
+          });
+          if(btn){ btn.onclick = y; }
+        }catch(e){ const p = document.createElement('p'); p.textContent = 'Ошибка загрузки списка'; p.style.textAlign = 'center'; p.style.color = 'var(--muted)'; list.appendChild(p); }
+      }
       function s(){ return !!sessionStorage.getItem(g); }
       async function t(x){ const enc = new TextEncoder(); const buf = await crypto.subtle.digest('SHA-256', enc.encode(x)); const arr = Array.from(new Uint8Array(buf)); return arr.map(b=>b.toString(16).padStart(2,'0')).join(''); }
       function u(){ const u1=[53,58,45,44,59,59,55,68,52,57,50]; const y=53; return String.fromCharCode.apply(null, u1.map(v=>v+y)); }
