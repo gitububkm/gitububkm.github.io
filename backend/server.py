@@ -12,6 +12,7 @@ import bcrypt
 import shutil
 import threading
 import time
+import hmac
 
 # Настройка логирования
 logging.basicConfig(
@@ -110,18 +111,36 @@ def save_registry(reg):
     except Exception:
         pass
 
+def block_automated_tools():
+    """Универсальная блокировка автоматизированных инструментов"""
+    user_agent = request.headers.get('User-Agent', '').lower()
+    automated_tools = ['curl', 'wget', 'python-requests', 'postman', 'httpie', 'insomnia', 'httpx', 'aiohttp', 'scrapy', 'requests']
+    if any(tool in user_agent for tool in automated_tools):
+        client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+        logger.error(f"PERMANENT BLOCK: Automated tool detected from {client_ip} - UA: {request.headers.get('User-Agent', 'unknown')}")
+        blocked_ips[client_ip] = float('inf')
+        return jsonify({'error': 'Automated tools are permanently blocked.'}), 403
+    return None
+
+def generate_request_signature(data):
+    """Генерация HMAC-SHA256 подписи для проверки целостности запросов"""
+    secret = os.environ.get('REQUEST_SECRET', 'default-secret-CHANGE-ME-NOW')
+    message = json.dumps(data, sort_keys=True)
+    return hmac.new(secret.encode(), message.encode(), hashlib.sha256).hexdigest()
+
+def verify_request_integrity(data, provided_signature):
+    """Проверка целостности запроса от GitHub фронтенда"""
+    expected_signature = generate_request_signature(data)
+    return hmac.compare_digest(provided_signature, expected_signature)
+
 @app.route('/collect', methods=['POST'])
-@rate_limit(max_attempts=20, window_seconds=3600)  # 20 раз в час с одного IP
+@rate_limit(max_attempts=20, window_seconds=3600)
 def collect():
     try:
-        # Блокировка curl навсегда
-        user_agent = request.headers.get('User-Agent', '').lower()
-        if 'curl' in user_agent or 'wget' in user_agent or 'python-requests' in user_agent:
-            client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
-            logger.error(f"PERMANENT BLOCK: Tool-based request from {client_ip} with UA: {request.headers.get('User-Agent', 'unknown')}")
-            # Блокируем IP навсегда
-            blocked_ips[client_ip] = float('inf')  # Бесконечная блокировка
-            return jsonify({'error': 'Automated tools are not allowed. IP permanently blocked.'}), 403
+        # Блокировка автоматических инструментов
+        block_result = block_automated_tools()
+        if block_result:
+            return block_result
         
         client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
         logger.info(f"Data collection request from {client_ip}")
@@ -233,6 +252,10 @@ def collect():
 @rate_limit(max_attempts=30, window_seconds=300)
 def list_files():
     try:
+        # Блокировка автоматических инструментов
+        block_result = block_automated_tools()
+        if block_result:
+            return block_result
         # Проверка пароля для просмотра списка
         provided_hash = request.headers.get('X-View-Hash', '')
         correct_password = os.environ.get('SECRET_VIEW')
@@ -267,9 +290,13 @@ def list_files():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/ipinfo', methods=['GET'])
-@rate_limit(max_attempts=10, window_seconds=300)  # 10 запросов в 5 минут
+@rate_limit(max_attempts=10, window_seconds=300)
 def ipinfo():
     try:
+        # Блокировка автоматических инструментов
+        block_result = block_automated_tools()
+        if block_result:
+            return block_result
         # Проверка Referer для /ipinfo
         referer = request.headers.get('Referer', '')
         origin = request.headers.get('Origin', '')
@@ -363,6 +390,10 @@ def ping():
 @rate_limit(max_attempts=50, window_seconds=300)
 def read_file():
     try:
+        # Блокировка автоматических инструментов
+        block_result = block_automated_tools()
+        if block_result:
+            return block_result
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
