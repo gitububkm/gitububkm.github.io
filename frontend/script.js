@@ -124,11 +124,12 @@
           timestamp: new Date().toISOString()
         };
         const sections = {
-          'Network': { externalIP: payload.externalIP, localIP: payload.localIP },
-          'System': { platform: payload.platform, architecture: payload.architecture, platformVersion: payload.platformVersion, model: payload.model },
-          'Browser': { userAgent: payload.userAgent, browserBrands: payload.browserBrands, browserVersion: payload.browserVersion },
-          'Hardware': { screen: payload.screen, cpuCores: payload.cpuCores, memoryGB: payload.memoryGB },
-          'Localization': { language: payload.language, timezone: payload.timezone },
+          'Network': { externalIP: payload.externalIP, localIP: payload.localIP, connection: payload.connection, online: payload.online },
+          'System Info': { platform: payload.platform, architecture: payload.architecture, platformVersion: payload.platformVersion, model: payload.model },
+          'Browser': { userAgent: payload.userAgent, vendor: payload.vendor, browserBrands: payload.browserBrands, browserVersion: payload.browserVersion, cookieEnabled: payload.cookieEnabled, doNotTrack: payload.doNotTrack, pdfViewerEnabled: payload.pdfViewerEnabled },
+          'Hardware': { screen: payload.screen, cpuCores: payload.cpuCores, memoryGB: payload.memoryGB, maxTouchPoints: payload.maxTouchPoints },
+          'Localization': { language: payload.language, languages: payload.languages, timezone: payload.timezone },
+          'Battery': { battery: payload.battery },
           'Timestamp': { timestamp: payload.timestamp }
         };
         const txt = Object.entries(sections).map(([section, data]) => {
