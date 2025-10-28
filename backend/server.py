@@ -55,14 +55,18 @@ def collect():
             import urllib.request
             import json as _json
             if client_ip:
-                req = urllib.request.Request(f'https://ipinfo.io/{client_ip}/json')
+                token = os.environ.get('IPINFO_TOKEN')
+                url = f'https://ipinfo.io/{client_ip}/json'
+                if token:
+                    url += f'?token={token}'
+                req = urllib.request.Request(url)
                 resp = urllib.request.urlopen(req, timeout=5)
                 g = _json.loads(resp.read())
                 for k in ['hostname','city','region','country','loc','org','timezone']:
                     if k in g and g[k]:
                         server_block.append(f"ipinfo.{k}: {g[k]}")
-        except Exception:
-            server_block.append('ipinfo: error')
+        except Exception as e:
+            server_block.append(f'ipinfo error: {str(e)[:100]}')
         server_block.append('')
         final_text = "\n".join(server_block) + content
 
