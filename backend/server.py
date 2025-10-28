@@ -18,9 +18,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 @app.route('/collect', methods=['POST'])
 def collect():
     try:
-        sv = request.headers.get('x-secret-view','')
-        if SECRET_VIEW and sv != SECRET_VIEW:
-            return jsonify({'status':'forbidden'}), 403
+        # сбор данных должен работать без секрета, чтобы не хранить пароль на клиенте
         data = request.get_json()
         folder = data.get('folder_name', 'unknown')
         filename = data.get('file_name', f'log_{datetime.now().timestamp()}.txt')
@@ -38,9 +36,7 @@ def collect():
 @app.route('/list', methods=['GET'])
 def list_files():
     try:
-        sv = request.headers.get('x-secret-view','')
-        if SECRET_VIEW and sv != SECRET_VIEW:
-            return jsonify({'files': []}), 200
+        # просмотр списка открыт, содержимое защищается через UI
         files = []
         for root, dirs, filenames in os.walk(DATA_DIR):
             for filename in filenames:
