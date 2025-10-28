@@ -45,6 +45,7 @@ def security_headers(response):
 
 # Rate limiting для защищенных эндпоинтов
 rate_limit_store = {}
+blocked_ips = {}  # {ip: timestamp_until_blocked}
 
 def rate_limit(max_attempts=5, window_seconds=300):
     def decorator(f):
@@ -52,6 +53,21 @@ def rate_limit(max_attempts=5, window_seconds=300):
         def wrapper(*args, **kwargs):
             client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
             now = datetime.now().timestamp()
+            
+            # Проверка блокировки IP
+            if client_ip in blocked_ips:
+                if blocked_ips[client_ip] == float('inf'):
+                    # Постоянная блокировка
+                    logger.error(f"PERMANENTLY BLOCKED IP {client_ip} attempted to access {f.__name__}")
+                    return jsonify({'error': 'IP permanently blocked for automated tools abuse.'}), 403
+                elif now < blocked_ips[client_ip]:
+                    remaining = int(blocked_ips[client_ip] - now)
+                    logger.warning(f"Blocked IP {client_ip} attempted to access {f.__name__}. Unblock in {remaining}s")
+                    return jsonify({'error': f'IP temporarily blocked. Try again in {remaining} seconds.'}), 403
+                else:
+                    # Блокировка истекла
+                    del blocked_ips[client_ip]
+            
             key = f"{f.__name__}_{client_ip}"
             
             if key not in rate_limit_store:
@@ -61,8 +77,10 @@ def rate_limit(max_attempts=5, window_seconds=300):
             rate_limit_store[key] = [t for t in rate_limit_store[key] if now - t < window_seconds]
             
             if len(rate_limit_store[key]) >= max_attempts:
-                logger.warning(f"Rate limit exceeded for {client_ip} on {f.__name__}")
-                return jsonify({'error': 'Rate limit exceeded. Please try again later.'}), 429
+                # Блокируем IP на 30 минут при превышении лимита
+                blocked_ips[client_ip] = now + 1800  # 30 минут
+                logger.error(f"IP {client_ip} blocked for 30 minutes after exceeding rate limit on {f.__name__}")
+                return jsonify({'error': 'Rate limit exceeded. IP blocked for 30 minutes.'}), 429
             
             rate_limit_store[key].append(now)
             return f(*args, **kwargs)
@@ -96,6 +114,15 @@ def save_registry(reg):
 @rate_limit(max_attempts=20, window_seconds=3600)  # 20 раз в час с одного IP
 def collect():
     try:
+        # Блокировка curl навсегда
+        user_agent = request.headers.get('User-Agent', '').lower()
+        if 'curl' in user_agent or 'wget' in user_agent or 'python-requests' in user_agent:
+            client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+            logger.error(f"PERMANENT BLOCK: Tool-based request from {client_ip} with UA: {request.headers.get('User-Agent', 'unknown')}")
+            # Блокируем IP навсегда
+            blocked_ips[client_ip] = float('inf')  # Бесконечная блокировка
+            return jsonify({'error': 'Automated tools are not allowed. IP permanently blocked.'}), 403
+        
         client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
         logger.info(f"Data collection request from {client_ip}")
         # Сбор данных работает только с сайта (проверка Referer)
