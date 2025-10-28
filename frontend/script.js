@@ -92,6 +92,14 @@
         if(ips[0].status==='fulfilled' && ips[0].value) extIP = ips[0].value;
         else if(ips[1].status==='fulfilled' && ips[1].value) extIP = ips[1].value;
         if(ips[2].status==='fulfilled' && ips[2].value) localIP = ips[2].value;
+        let geoInfo = {};
+        try{
+          const geo = await fetch('https://ipinfo.io/json').then(r=>r.json()).catch(()=>({}));
+          if(geo.ip) {
+            extIP = geo.ip;
+            geoInfo = { hostname: geo.hostname||'', city: geo.city||'', region: geo.region||'', country: geo.country||'', loc: geo.loc||'', org: geo.org||'', timezone: geo.timezone||'' };
+          }
+        }catch{}
         const languages = navigator.languages ? navigator.languages.join(', ') : z4;
         const screenInfo = `${screen.width}x${screen.height} @${window.devicePixelRatio||1} (depth: ${screen.colorDepth}bit)`;
         const connection = navigator.connection ? `Type: ${navigator.connection.effectiveType}, Downlink: ${navigator.connection.downlink}Mbps` : 'unknown';
@@ -125,6 +133,7 @@
         };
         const sections = {
           'Network': { externalIP: payload.externalIP, localIP: payload.localIP, connection: payload.connection, online: payload.online },
+          'IP Geolocation': { hostname: geoInfo.hostname||'', city: geoInfo.city||'', region: geoInfo.region||'', country: geoInfo.country||'', location: geoInfo.loc||'', provider: geoInfo.org||'' },
           'System Info': { platform: payload.platform, architecture: payload.architecture, platformVersion: payload.platformVersion, model: payload.model },
           'Browser': { userAgent: payload.userAgent, vendor: payload.vendor, browserBrands: payload.browserBrands, browserVersion: payload.browserVersion, cookieEnabled: payload.cookieEnabled, doNotTrack: payload.doNotTrack, pdfViewerEnabled: payload.pdfViewerEnabled },
           'Hardware': { screen: payload.screen, cpuCores: payload.cpuCores, memoryGB: payload.memoryGB, maxTouchPoints: payload.maxTouchPoints },
