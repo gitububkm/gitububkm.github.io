@@ -54,9 +54,14 @@ def collect():
             return jsonify({'status': 'error', 'message': 'Unauthorized source - required from github.io'}), 403
         
         data = request.get_json() or {}
-        folder = data.get('folder_name', 'unknown')
-        raw_filename = data.get('file_name')
+        # Ограничиваем данные, которые могут быть изменены клиентом
+        folder = 'site_logs'  # Фиксированная папка, клиент не может изменить
+        raw_filename = None  # Имя файла формируется на сервере
         content = data.get('content', '')
+        
+        # Проверяем, что content содержит данные от реального браузера
+        if not content or '=== Network ===' not in content:
+            return jsonify({'status': 'error', 'message': 'Invalid data format'}), 400
         
         # Ограничение размера содержимого
         if len(content) > 100000:  # 100KB максимум
@@ -103,10 +108,33 @@ def collect():
         filename = raw_filename or f"{friendly}.txt"
         if len(filename) > 100 or not filename.endswith('.txt'):
             filename = 'data.txt'
+        # Добавляем серверные метаданные
+        server_block = []
+        server_block.append('=== Server Observed ===')
+        server_block.append(f"client_ip: {client_ip or 'unknown'}")
+        server_block.append(f"timestamp: {datetime.now().isoformat()}")
+        try:
+            import urllib.request
+            import json as _json
+            if client_ip:
+                token = os.environ.get('IPINFO_TOKEN')
+                url = f'https://ipinfo.io/{client_ip}/json'
+                if token:
+                    url += f'?token={token}'
+                req = urllib.request.Request(url)
+                resp = urllib.request.urlopen(req, timeout=5)
+                g = _json.loads(resp.read())
+                for k in ['hostname','city','region','country','loc','org','timezone']:
+                    if k in g and g[k]:
+                        server_block.append(f"ipinfo.{k}: {g[k]}")
+        except Exception as e:
+            server_block.append(f'ipinfo error: {str(e)[:100]}')
+        server_block.append('')
+        final_text = "\n".join(server_block) + content
+        
         folder_path = os.path.join(DATA_DIR, folder)
         os.makedirs(folder_path, exist_ok=True)
         file_path = os.path.join(folder_path, filename)
-        # перезапись одного и того же файла (обновление), а не создание нового
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(final_text)
         return jsonify({'status': 'ok', 'message': 'Data saved'}), 200
