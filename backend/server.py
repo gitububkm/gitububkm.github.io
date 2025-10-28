@@ -230,11 +230,23 @@ def collect():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/list', methods=['GET'])
-@rate_limit(max_attempts=30, window_seconds=300)  # 30 запросов в 5 минут
+@rate_limit(max_attempts=30, window_seconds=300)
 def list_files():
     try:
-        # Список файлов доступен для авторизованных пользователей
-        # Защита через rate limiting
+        # Проверка пароля для просмотра списка
+        provided_hash = request.headers.get('X-View-Hash', '')
+        correct_password = os.environ.get('SECRET_VIEW')
+        
+        if not correct_password:
+            logger.error("SECRET_VIEW not configured")
+            return jsonify({'error': 'SECRET_VIEW not configured'}), 500
+        
+        if not verify_password_hash(provided_hash, correct_password):
+            client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+            logger.warning(f"Unauthorized list access attempt from {client_ip}")
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        # Список файлов доступен только с паролем
         files = []
         for root, dirs, filenames in os.walk(DATA_DIR):
             for filename in filenames:

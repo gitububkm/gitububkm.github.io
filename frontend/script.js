@@ -229,7 +229,7 @@
           const BASE_API = 'https://data-collector-gizw.onrender.com';
           const url = `${BASE_API}/list`;
           const sv = (window._SV)||'';
-          const res = await fetch(url, { headers: { 'x-secret-view': sv }});
+          const res = await fetch(url, { headers: { 'X-View-Hash': sv }});
           if(!res.ok){ throw new Error(`HTTP ${res.status}`); }
           const data = await res.json();
           const logs = data.files || [];
@@ -308,6 +308,7 @@
           const res = await fetch(`${BASE_API}/check-view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
           const data = await res.json();
           if(!data.valid) throw new Error('x');
+          window._SV = hp; // Сохраняем хеш для последующих запросов
           q();
           j();
           r();
