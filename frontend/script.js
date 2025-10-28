@@ -261,8 +261,7 @@
               const close = document.createElement('button'); close.className='btn'; close.textContent='Закрыть'; close.style.marginTop='16px';
               close.onclick = () => modal.remove();
               try{
-                const sv = (window._SV)||'';
-                const r = await fetch(`${BASE_API}/read?path=${encodeURIComponent(item.path)}`, { headers: { 'x-secret-view': sv }});
+                const r = await fetch(`${BASE_API}/read?path=${encodeURIComponent(item.path)}`);
                 if(!r.ok) throw new Error(`HTTP ${r.status}`);
                 const j = await r.json();
                 sheet.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;line-height:1.5;margin:0">${(j.content||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</pre>`;

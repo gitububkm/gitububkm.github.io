@@ -59,9 +59,6 @@ def list_files():
 @app.route('/read', methods=['GET'])
 def read_file():
     try:
-        sv = request.headers.get('x-secret-view','')
-        if SECRET_VIEW and sv != SECRET_VIEW:
-            return jsonify({'error': 'forbidden'}), 403
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
