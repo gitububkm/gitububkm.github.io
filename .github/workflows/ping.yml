@@ -1,7 +1,11 @@
 name: ping-render
 on:
   schedule:
+<<<<<<< HEAD
     - cron: "*/5 * * * *"     # каждые 5 минут
+=======
+    - cron: "*/10 * * * *"     # каждые 10 минут
+>>>>>>> 8ccce049c050448b6f1bf661052f9733877afa6e
   workflow_dispatch:           # запуск вручную
 jobs:
   ping:
@@ -20,4 +24,7 @@ jobs:
           done
           # Не считаем холодный старт ошибкой
           exit 0
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8ccce049c050448b6f1bf661052f9733877afa6e
