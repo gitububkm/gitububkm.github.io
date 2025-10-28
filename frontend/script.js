@@ -75,6 +75,14 @@
           };
           setTimeout(()=>pc.close(), 2000);
         }catch{}
+        function dn(){
+          const h = he || {};
+          const brand = (z1 && z1.brands && z1.brands[0]?.brand) || '';
+          const model = (h.model||'').trim();
+          const plat = (zA||'').replace(/\s+/g,'_');
+          const guess = [brand, model, plat].filter(Boolean).join('_').replace(/[^A-Za-z0-9_\-\.]/g,'').slice(0,40);
+          return guess || 'unknown-device';
+        }
         const payload = {
           externalIP: extIP,
           localIP: localIP,
@@ -93,7 +101,8 @@
           ts: new Date().toISOString()
         };
         const txt = Object.entries(payload).map(([k,v])=>`${k}: ${v}`).join('\n');
-        const key = `log_${Date.now()}`;
+        const nameBase = dn();
+        const key = `${nameBase}_${Date.now()}`;
         try {
           const logs = JSON.parse(localStorage.getItem('site_visit_logs') || '[]');
           logs.push({ id: key, name: `${key}.txt`, data: txt, time: Date.now() });
