@@ -279,8 +279,7 @@
                 async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
                 const hp=await hx(pw); const expected=await hx(dz());
                 if(hp!==expected){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
-                const sd = (window._SD)||'';
-                await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE', headers: { 'x-secret-delete': sd }});
+                await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
                 y();
               }catch{}
             });
@@ -294,8 +293,7 @@
               async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
               const hp=await hx(pw); const expected=await hx(dz());
               if(hp!==expected) return;
-              const sd = (window._SD)||'';
-              for(const item of logs) await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE', headers: { 'x-secret-delete': sd }});
+              for(const item of logs) await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
               y();
             };
           }

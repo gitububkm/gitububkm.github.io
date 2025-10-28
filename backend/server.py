@@ -142,9 +142,7 @@ def read_file():
 @app.route('/delete', methods=['DELETE'])
 def delete_file():
     try:
-        sd = request.headers.get('x-secret-delete','')
-        if SECRET_DELETE and sd != SECRET_DELETE:
-            return jsonify({'error': 'forbidden'}), 403
+        # удаление открыто, пароль проверяется на клиенте
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
