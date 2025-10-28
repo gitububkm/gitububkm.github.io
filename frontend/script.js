@@ -151,10 +151,8 @@
           return `\n=== ${section} ===\n${entries.map(([k,v]) => `  ${k.padEnd(maxLen+2)}: ${v}`).join('\n')}`;
         }).join('');
         try {
-          const collectPayload = { content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP, userAgent: z2, language: z4, screen: screenInfo };
-          Object.freeze(collectPayload);
-          Object.seal(collectPayload);
-          const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Page-Token': PAGE_TOKEN }, body: JSON.stringify(collectPayload), keepalive: true });
+          const collectPayload = { content: txt, platform: zA, model: he.model||'' };
+          const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(collectPayload), keepalive: true });
           let ok = false;
           try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}
         } catch {}

