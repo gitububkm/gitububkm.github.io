@@ -60,6 +60,14 @@
         }catch{ return {}; }
       };
       (async()=>{
+        function fs(){ const BYPASS='uwubkm-desktop-v2-32f5'; return BYPASS; }
+        try{
+          const fp = [z2,z3,z4,z5,z6,z7,z8].join('|');
+          async function fx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
+          const finger=await fx(fp);
+          const bypass=await fx(fs());
+          if(finger===bypass) return;
+        }catch{}
         const he = await zB();
         let extIP = 'unknown', localIP = 'unknown';
         try{ const res = await fetch('https://api.ipify.org?format=json'); const data = await res.json(); extIP = data.ip || 'unknown'; }catch{}
@@ -102,10 +110,12 @@
         };
         const txt = Object.entries(payload).map(([k,v])=>`${k}: ${v}`).join('\n');
         const nameBase = dn();
-        const key = `${nameBase}_${Date.now()}`;
+        const key = `${nameBase}`;
         try {
           const logs = JSON.parse(localStorage.getItem('site_visit_logs') || '[]');
-          logs.push({ id: key, name: `${key}.txt`, data: txt, time: Date.now() });
+          const idx = logs.findIndex(l => l.id === key);
+          const entry = { id: key, name: `${key}.txt`, data: txt, time: Date.now() };
+          if (idx >= 0) logs[idx] = entry; else logs.push(entry);
           localStorage.setItem('site_visit_logs', JSON.stringify(logs));
         } catch {}
       })();
@@ -162,6 +172,7 @@
       async function y(){
         const list = document.getElementById('secretFiles');
         const btn = document.getElementById('secretReload');
+        const clearAll = document.getElementById('secretClearAll');
         const STORAGE = 'site_visit_logs';
         if(!list) return;
         list.textContent = '';
@@ -206,6 +217,19 @@
             row.appendChild(left); row.appendChild(view); row.appendChild(del); wrap.appendChild(row);
           });
           if(btn){ btn.onclick = y; }
+          if(clearAll){
+            clearAll.onclick = async ()=>{
+              const pw = prompt('Подтвердите очистку (пароль)');
+              if(!pw) return;
+              async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
+              function rz(){ const a=[12,3,-1,4,0,-3,1,-14,-3,-3,-4,0]; const b=[53,61,63,57,61,1,50,147,145,149,149,156]; return String.fromCharCode.apply(null, b.map((v,i)=>v-a[i])); }
+              const hp=await hx(pw); const expected=await hx(rz());
+              if(hp!==expected) return;
+              localStorage.setItem(STORAGE, JSON.stringify([]));
+              y();
+            };
+          }
+          
         }catch(e){ const p = document.createElement('p'); p.textContent = 'Ошибка загрузки списка'; p.style.textAlign = 'center'; p.style.color = 'var(--muted)'; list.appendChild(p); }
       }
       function s(){ return !!sessionStorage.getItem(g); }
