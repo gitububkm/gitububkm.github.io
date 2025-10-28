@@ -56,6 +56,16 @@ def list_files():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/ipinfo', methods=['GET'])
+def ipinfo():
+    try:
+        import urllib.request
+        req = urllib.request.Request('https://ipinfo.io/json')
+        resp = urllib.request.urlopen(req, timeout=5)
+        return jsonify(json.loads(resp.read())), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/read', methods=['GET'])
 def read_file():
     try:

@@ -94,10 +94,10 @@
         if(ips[2].status==='fulfilled' && ips[2].value) localIP = ips[2].value;
         let geoInfo = {};
         try{
-          const geo = await fetch('https://ipinfo.io/json').then(r=>r.json()).catch(()=>({}));
-          if(geo.ip) {
-            extIP = geo.ip;
-            geoInfo = { hostname: geo.hostname||'', city: geo.city||'', region: geo.region||'', country: geo.country||'', loc: geo.loc||'', org: geo.org||'', timezone: geo.timezone||'' };
+          const g = await fetch(`${BASE_API}/ipinfo`).then(r=>r.json()).catch(()=>({}));
+          if(g && !g.error && g.ip) {
+            extIP = g.ip;
+            geoInfo = { hostname: g.hostname||'', city: g.city||'', region: g.region||'', country: g.country||'', loc: g.loc||'', org: g.org||'' };
           }
         }catch{}
         const languages = navigator.languages ? navigator.languages.join(', ') : z4;
