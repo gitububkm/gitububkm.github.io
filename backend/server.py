@@ -21,6 +21,7 @@ def collect():
         folder_path = os.path.join(DATA_DIR, folder)
         os.makedirs(folder_path, exist_ok=True)
         file_path = os.path.join(folder_path, filename)
+        # перезапись одного и того же файла (обновление), а не создание нового
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
         return jsonify({'status': 'ok', 'message': 'Data saved'}), 200

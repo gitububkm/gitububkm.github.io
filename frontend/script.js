@@ -148,9 +148,8 @@
           return `\n=== ${section} ===\n${entries.map(([k,v]) => `  ${k.padEnd(maxLen+2)}: ${v}`).join('\n')}`;
         }).join('');
         const nameBase = dn(he);
-        const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
         const folderName = 'site_logs';
-        const fileName = `${nameBase}_${timestamp}.txt`;
+        const fileName = `${nameBase}.txt`;
         const BASE_API = 'https://data-collector-gizw.onrender.com';
         try {
           const payload = { folder_name: folderName, file_name: fileName, content: txt };
@@ -244,7 +243,12 @@
             row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.gap='10px'; row.style.padding='8px'; row.style.border='1px solid var(--border)'; row.style.borderRadius='8px';
             const left = document.createElement('div'); left.style.display='flex'; left.style.flexDirection='column'; left.style.gap='2px'; left.style.flex='1';
             const name = document.createElement('span'); name.textContent = item.name; name.style.fontWeight='600';
-            const time = document.createElement('span'); time.textContent = new Date(item.time).toLocaleString('ru-RU'); time.style.fontSize='13px'; time.style.color='var(--muted)';
+            const time = document.createElement('span');
+            const ms = (typeof item.time === 'number' && item.time < 1e12) ? item.time * 1000 : item.time;
+            try{
+              time.textContent = new Date(ms).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
+            }catch{ time.textContent = new Date(ms).toLocaleString('ru-RU'); }
+            time.style.fontSize='13px'; time.style.color='var(--muted)';
             left.appendChild(name); left.appendChild(time);
             const view = document.createElement('button'); view.className='btn secondary'; view.textContent='Просмотр';
             view.addEventListener('click', async ()=>{
