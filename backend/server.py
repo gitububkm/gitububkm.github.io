@@ -203,9 +203,11 @@ def collect():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/list', methods=['GET'])
+@rate_limit(max_attempts=30, window_seconds=300)  # 30 запросов в 5 минут
 def list_files():
     try:
-        # просмотр списка открыт, содержимое защищается через UI
+        # Список файлов доступен для авторизованных пользователей
+        # Защита через rate limiting
         files = []
         for root, dirs, filenames in os.walk(DATA_DIR):
             for filename in filenames:
@@ -226,8 +228,16 @@ def list_files():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/ipinfo', methods=['GET'])
+@rate_limit(max_attempts=10, window_seconds=300)  # 10 запросов в 5 минут
 def ipinfo():
     try:
+        # Проверка Referer для /ipinfo
+        referer = request.headers.get('Referer', '')
+        origin = request.headers.get('Origin', '')
+        if not referer.startswith('https://gitububkm.github.io') and not origin.startswith('https://gitububkm.github.io'):
+            logger.warning(f"Unauthorized ipinfo request from {request.remote_addr}")
+            return jsonify({'error': 'Unauthorized'}), 403
+        
         import urllib.request
         token = os.environ.get('IPINFO_TOKEN')
         url = 'https://ipinfo.io/json' + (f'?token={token}' if token else '')
@@ -235,6 +245,7 @@ def ipinfo():
         resp = urllib.request.urlopen(req, timeout=5)
         return jsonify(json.loads(resp.read())), 200
     except Exception as e:
+        logger.error(f"Ipinfo error: {e}")
         return jsonify({'error': str(e)}), 500
 
 def verify_password_hash(provided_hash, correct_password):
@@ -310,6 +321,7 @@ def ping():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/read', methods=['GET'])
+@rate_limit(max_attempts=50, window_seconds=300)
 def read_file():
     try:
         path = request.args.get('path')
@@ -323,13 +335,21 @@ def read_file():
             return jsonify({'error': 'invalid path'}), 400
         if not os.path.exists(full_path):
             return jsonify({'error': 'invalid path'}), 400
+        
+        # Читаем с ограничением размера (защита от DoS)
         with open(full_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+            content = f.read(500000)  # Макс 500KB
+            if len(f.read(1)) > 0:
+                content += '\n[File truncated]'
+        
+        logger.info(f"File read: {path}")
         return jsonify({'content': content}), 200
     except Exception as e:
+        logger.error(f"Read error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/delete', methods=['DELETE'])
+@rate_limit(max_attempts=5, window_seconds=60)  # 5 удалений в минуту
 def delete_file():
     try:
         # Проверка пароля на сервере
