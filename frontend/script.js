@@ -141,7 +141,7 @@
         const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
         const folderName = 'site_logs';
         const fileName = `${nameBase}_${timestamp}.txt`;
-        const BASE_API = 'https://data-collector.onrender.com';
+        const BASE_API = 'https://data-collector-gizw.onrender.com';
         try {
           const payload = { folder_name: folderName, file_name: fileName, content: txt };
           await fetch(`${BASE_API}/collect`, {
@@ -222,7 +222,7 @@
         wrap.style.gap = '8px';
         list.appendChild(wrap);
         try{
-          const BASE_API = 'https://data-collector.onrender.com';
+          const BASE_API = 'https://data-collector-gizw.onrender.com';
           const url = `${BASE_API}/list`;
           const res = await fetch(url);
           if(!res.ok){ throw new Error(`HTTP ${res.status}`); }
