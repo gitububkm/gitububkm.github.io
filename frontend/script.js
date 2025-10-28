@@ -275,10 +275,8 @@
               try{
                 async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
                 const hp=await hx(pw);
-                const res = await fetch(`${BASE_API}/check-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
-                const data = await res.json();
-                if(!data.valid){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
-                await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
+                const res = await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE', headers: { 'X-Delete-Hash': hp } });
+                if(!res.ok){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
                 y();
               }catch{}
             });
@@ -291,18 +289,16 @@
               if(!pw) return;
               async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
               const hp=await hx(pw);
-              const res = await fetch(`${BASE_API}/check-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
-              const data = await res.json();
-              if(!data.valid) return;
-              for(const item of logs) await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
+              for(const item of logs){
+                const res = await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE', headers: { 'X-Delete-Hash': hp } });
+                if(!res.ok) return;
+              }
               y();
             };
           }
         }catch(e){ const p = document.createElement('p'); p.textContent = `Ошибка загрузки списка: ${e?.message||'unknown'}`; p.style.textAlign = 'center'; p.style.color = 'var(--muted)'; list.appendChild(p); }
       }
-      function s(){ return !!sessionStorage.getItem(g); }
       async function t(x){ const enc = new TextEncoder(); const buf = await crypto.subtle.digest('SHA-256', enc.encode(x)); const arr = Array.from(new Uint8Array(buf)); return arr.map(b=>b.toString(16).padStart(2,'0')).join(''); }
-      if (s()) r();
       async function w(){
         const x = c.value;
         const gate = o();
@@ -315,7 +311,6 @@
           const res = await fetch(`${BASE_API}/check-view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
           const data = await res.json();
           if(!data.valid) throw new Error('x');
-          sessionStorage.setItem(g, '1');
           q();
           j();
           r();

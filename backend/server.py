@@ -181,7 +181,16 @@ def read_file():
 @app.route('/delete', methods=['DELETE'])
 def delete_file():
     try:
-        # удаление открыто, пароль проверяется на клиенте
+        # Проверка пароля на сервере
+        provided_hash = request.headers.get('X-Delete-Hash', '')
+        import hashlib
+        correct_password = os.environ.get('SECRET_DELETE')
+        if not correct_password:
+            return jsonify({'error': 'SECRET_DELETE not configured'}), 500
+        correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
+        if provided_hash != correct_hash:
+            return jsonify({'error': 'Unauthorized'}), 401
+        
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
