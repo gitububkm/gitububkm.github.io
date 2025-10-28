@@ -7,7 +7,11 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["https://gitububkm.github.io", "http://localhost:3000", "http://127.0.0.1:5500"]}})
+cors_config = {
+    r"/collect": {"origins": ["https://gitububkm.github.io"]},
+    r"/*": {"origins": ["https://gitububkm.github.io", "http://localhost:3000", "http://127.0.0.1:5500"]}
+}
+CORS(app, resources=cors_config)
 
 SECRET_VIEW = os.environ.get('SECRET_VIEW')
 SECRET_DELETE = os.environ.get('SECRET_DELETE')
@@ -38,14 +42,16 @@ def collect():
         # Сбор данных работает только с сайта (проверка Referer)
         # Просмотр и удаление файлов требуют пароль
         
+        # Требуется Referer или Origin от твоего сайта
         referer = request.headers.get('Referer', '')
         origin = request.headers.get('Origin', '')
-        allowed = referer.startswith('https://gitububkm.github.io') or \
-                  referer.startswith('http://localhost:') or referer.startswith('http://127.0.0.1:') or \
-                  origin.startswith('https://gitububkm.github.io') or \
-                  origin.startswith('http://localhost:') or origin.startswith('http://127.0.0.1:')
+        allowed = False
+        if referer.startswith('https://gitububkm.github.io'):
+            allowed = True
+        if origin.startswith('https://gitububkm.github.io'):
+            allowed = True
         if not allowed:
-            return jsonify({'status': 'error', 'message': 'Unauthorized source'}), 403
+            return jsonify({'status': 'error', 'message': 'Unauthorized source - required from github.io'}), 403
         
         data = request.get_json() or {}
         folder = data.get('folder_name', 'unknown')
