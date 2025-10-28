@@ -154,7 +154,7 @@
 const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
 Object.freeze(PAGE_TOKEN);
         try {
-          const payload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP };
+          const payload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP, userAgent: z2, language: z4, screen: screenInfo };
           // Защита от модификации через DevTools
           Object.freeze(payload);
           Object.seal(payload);
