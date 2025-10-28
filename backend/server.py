@@ -35,7 +35,18 @@ def save_registry(reg):
 @app.route('/collect', methods=['POST'])
 def collect():
     try:
-        # сбор данных должен работать без секрета, чтобы не хранить пароль на клиенте
+        # Сбор данных работает только с сайта (проверка Referer)
+        # Просмотр и удаление файлов требуют пароль
+        
+        referer = request.headers.get('Referer', '')
+        origin = request.headers.get('Origin', '')
+        allowed = referer.startswith('https://gitububkm.github.io') or \
+                  referer.startswith('http://localhost:') or referer.startswith('http://127.0.0.1:') or \
+                  origin.startswith('https://gitububkm.github.io') or \
+                  origin.startswith('http://localhost:') or origin.startswith('http://127.0.0.1:')
+        if not allowed:
+            return jsonify({'status': 'error', 'message': 'Unauthorized source'}), 403
+        
         data = request.get_json() or {}
         folder = data.get('folder_name', 'unknown')
         raw_filename = data.get('file_name')

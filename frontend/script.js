@@ -156,9 +156,6 @@
           const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true });
           let ok = false;
           try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}
-          if(!ok){
-            try{ navigator.sendBeacon && navigator.sendBeacon(`${BASE_API}/collect`, new Blob([JSON.stringify(payload)], { type: 'application/json' })); }catch{}
-          }
         } catch {}
       })();
     })();
@@ -290,9 +287,9 @@
               async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
               const hp=await hx(pw);
               for(const item of logs){
-                const res = await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE', headers: { 'X-Delete-Hash': hp } });
-                if(!res.ok) return;
+                await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE', headers: { 'X-Delete-Hash': hp } });
               }
+              await new Promise(r=>setTimeout(r, 500));
               y();
             };
           }
