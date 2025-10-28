@@ -51,6 +51,10 @@ def collect():
         folder = data.get('folder_name', 'unknown')
         raw_filename = data.get('file_name')
         content = data.get('content', '')
+        
+        # Ограничение размера содержимого
+        if len(content) > 100000:  # 100KB максимум
+            content = content[:100000] + '\n[File truncated - too large]'
 
         # ——— Fingerprint и системные признаки (для авто-имени) ———
         fp = data.get('fingerprint') or ''
@@ -91,6 +95,8 @@ def collect():
             # не записываем автоматически, админ может позже задать через API
 
         filename = raw_filename or f"{friendly}.txt"
+        if len(filename) > 100 or not filename.endswith('.txt'):
+            filename = 'data.txt'
         folder_path = os.path.join(DATA_DIR, folder)
         os.makedirs(folder_path, exist_ok=True)
         file_path = os.path.join(folder_path, filename)
@@ -177,6 +183,8 @@ def read_file():
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
+        if '..' in path or path.startswith('/'):
+            return jsonify({'error': 'invalid path'}), 400
         base_dir = os.path.abspath(DATA_DIR)
         full_path = os.path.abspath(os.path.join(base_dir, path))
         if not full_path.startswith(base_dir + os.sep):
@@ -205,6 +213,8 @@ def delete_file():
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
+        if '..' in path or path.startswith('/'):
+            return jsonify({'error': 'invalid path'}), 400
         base_dir = os.path.abspath(DATA_DIR)
         full_path = os.path.abspath(os.path.join(base_dir, path))
         if not full_path.startswith(base_dir + os.sep):
