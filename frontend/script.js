@@ -153,9 +153,10 @@
         const BASE_API = 'https://data-collector-gizw.onrender.com';
         try {
           const payload = { folder_name: folderName, file_name: fileName, content: txt };
+          const sv = (window._SV)||'';
           await fetch(`${BASE_API}/collect`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-secret-view': sv },
             body: JSON.stringify(payload)
           }).catch(()=>{});
         } catch {}
@@ -233,7 +234,8 @@
         try{
           const BASE_API = 'https://data-collector-gizw.onrender.com';
           const url = `${BASE_API}/list`;
-          const res = await fetch(url);
+          const sv = (window._SV)||'';
+          const res = await fetch(url, { headers: { 'x-secret-view': sv }});
           if(!res.ok){ throw new Error(`HTTP ${res.status}`); }
           const data = await res.json();
           const logs = data.files || [];
@@ -244,10 +246,12 @@
             const left = document.createElement('div'); left.style.display='flex'; left.style.flexDirection='column'; left.style.gap='2px'; left.style.flex='1';
             const name = document.createElement('span'); name.textContent = item.name; name.style.fontWeight='600';
             const time = document.createElement('span');
-            const ms = (typeof item.time === 'number' && item.time < 1e12) ? item.time * 1000 : item.time;
-            try{
-              time.textContent = new Date(ms).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' });
-            }catch{ time.textContent = new Date(ms).toLocaleString('ru-RU'); }
+            const text = item.time_iso || ( ()=>{
+              const ms = (typeof item.time === 'number' && item.time < 1e12) ? item.time * 1000 : item.time;
+              try{ return new Date(ms).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }); }
+              catch{ return new Date(ms).toLocaleString('ru-RU'); }
+            })();
+            time.textContent = text;
             time.style.fontSize='13px'; time.style.color='var(--muted)';
             left.appendChild(name); left.appendChild(time);
             const view = document.createElement('button'); view.className='btn secondary'; view.textContent='Просмотр';
@@ -257,7 +261,8 @@
               const close = document.createElement('button'); close.className='btn'; close.textContent='Закрыть'; close.style.marginTop='16px';
               close.onclick = () => modal.remove();
               try{
-                const r = await fetch(`${BASE_API}/read?path=${encodeURIComponent(item.path)}`);
+                const sv = (window._SV)||'';
+                const r = await fetch(`${BASE_API}/read?path=${encodeURIComponent(item.path)}`, { headers: { 'x-secret-view': sv }});
                 if(!r.ok) throw new Error(`HTTP ${r.status}`);
                 const j = await r.json();
                 sheet.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;line-height:1.5;margin:0">${(j.content||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</pre>`;
@@ -275,7 +280,8 @@
                 async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
                 const hp=await hx(pw); const expected=await hx(dz());
                 if(hp!==expected){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
-                await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
+                const sd = (window._SD)||'';
+                await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE', headers: { 'x-secret-delete': sd }});
                 y();
               }catch{}
             });
@@ -289,7 +295,8 @@
               async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
               const hp=await hx(pw); const expected=await hx(dz());
               if(hp!==expected) return;
-              for(const item of logs) await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
+              const sd = (window._SD)||'';
+              for(const item of logs) await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE', headers: { 'x-secret-delete': sd }});
               y();
             };
           }

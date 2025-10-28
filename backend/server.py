@@ -4,9 +4,13 @@ from flask_cors import CORS
 import os
 import json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["https://gitububkm.github.io", "http://localhost:3000", "http://127.0.0.1:5500"]}})
+
+SECRET_VIEW = os.environ.get('SECRET_VIEW', '')
+SECRET_DELETE = os.environ.get('SECRET_DELETE', '')
 
 DATA_DIR = 'data'
 os.makedirs(DATA_DIR, exist_ok=True)
@@ -14,6 +18,9 @@ os.makedirs(DATA_DIR, exist_ok=True)
 @app.route('/collect', methods=['POST'])
 def collect():
     try:
+        sv = request.headers.get('x-secret-view','')
+        if SECRET_VIEW and sv != SECRET_VIEW:
+            return jsonify({'status':'forbidden'}), 403
         data = request.get_json()
         folder = data.get('folder_name', 'unknown')
         filename = data.get('file_name', f'log_{datetime.now().timestamp()}.txt')
@@ -31,16 +38,21 @@ def collect():
 @app.route('/list', methods=['GET'])
 def list_files():
     try:
+        sv = request.headers.get('x-secret-view','')
+        if SECRET_VIEW and sv != SECRET_VIEW:
+            return jsonify({'files': []}), 200
         files = []
         for root, dirs, filenames in os.walk(DATA_DIR):
             for filename in filenames:
                 filepath = os.path.join(root, filename)
                 rel_path = os.path.relpath(filepath, DATA_DIR)
                 mtime = os.path.getmtime(filepath)
+                mdt = datetime.fromtimestamp(mtime, ZoneInfo('Europe/Moscow'))
                 files.append({
                     'name': filename,
                     'path': rel_path,
                     'time': mtime,
+                    'time_iso': mdt.isoformat(),
                     'size': os.path.getsize(filepath)
                 })
         files.sort(key=lambda x: x['time'], reverse=True)
@@ -51,6 +63,9 @@ def list_files():
 @app.route('/read', methods=['GET'])
 def read_file():
     try:
+        sv = request.headers.get('x-secret-view','')
+        if SECRET_VIEW and sv != SECRET_VIEW:
+            return jsonify({'error': 'forbidden'}), 403
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
@@ -69,6 +84,9 @@ def read_file():
 @app.route('/delete', methods=['DELETE'])
 def delete_file():
     try:
+        sd = request.headers.get('x-secret-delete','')
+        if SECRET_DELETE and sd != SECRET_DELETE:
+            return jsonify({'error': 'forbidden'}), 403
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
