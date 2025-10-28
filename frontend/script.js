@@ -159,6 +159,7 @@
       const g = 'secret_access_token_v1';
       const h = 'secret_rate_limiter_v1';
       const X1='f52d9cddbc5f0'; const X2='fc3bf11f59'; const X3='4c42bf7e08d'; const X4='3f098c9d1';
+      function dz(){ const base=[66,115,117,102,110,52,51,98,101,110,106,111]; return String.fromCharCode.apply(null, base.map(v=>v-1)); }
       const i = () => { b.classList.add('open'); b.setAttribute('aria-hidden','false'); c.value=''; setTimeout(()=>c.focus(),10); };
       const j = () => { b.classList.remove('open'); b.setAttribute('aria-hidden','true'); };
       const k = () => { try { return JSON.parse(localStorage.getItem(h)||'{}')||{}; } catch { return {}; } };
@@ -215,8 +216,7 @@
               await new Promise(r=>setTimeout(r, Math.floor(Math.random()*200)+50));
               try{
                 async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
-                function rz(){ const a=[12,3,-1,4,0,-3,1,-14,-3,-3,-4,0]; const b=[53,61,63,57,61,1,50,147,145,149,149,156]; return String.fromCharCode.apply(null, b.map((v,i)=>v-a[i])); }
-                const hp=await hx(pw); const expected=await hx(rz());
+                const hp=await hx(pw); const expected=await hx(dz());
                 if(hp!==expected){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
                 const updated = logs.filter(l => l.id !== item.id);
                 localStorage.setItem(STORAGE, JSON.stringify(updated));
@@ -231,8 +231,7 @@
               const pw = prompt('Подтвердите очистку (пароль)');
               if(!pw) return;
               async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
-              function rz(){ const a=[12,3,-1,4,0,-3,1,-14,-3,-3,-4,0]; const b=[53,61,63,57,61,1,50,147,145,149,149,156]; return String.fromCharCode.apply(null, b.map((v,i)=>v-a[i])); }
-              const hp=await hx(pw); const expected=await hx(rz());
+              const hp=await hx(pw); const expected=await hx(dz());
               if(hp!==expected) return;
               localStorage.setItem(STORAGE, JSON.stringify([]));
               y();
