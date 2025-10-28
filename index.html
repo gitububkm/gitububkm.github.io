@@ -16,7 +16,6 @@
       <div class="links">
         <a href="#features">Проекты</a>
         <a href="#contact">Контакты</a>
-        <a href="#secret" id="secretLink">Совершенно Секретно</a>
       </div>
       <div class="actions">
         <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">GitHub</a>
@@ -85,18 +84,6 @@
     </article>
   </section>
 
-  <section id="secretPanel" class="container" hidden aria-hidden="true">
-    <div class="secret-card fade-up">
-      <div class="secret-title">TOP SECRET</div>
-      <p class="muted">Доступ разрешён.</p>
-      <div style="margin-top:16px;display:flex;gap:10px;justify-content:center">
-        <button class="btn" id="secretReload" type="button">Обновить</button>
-        <button class="btn secondary" id="secretClearAll" type="button">Очистить все</button>
-      </div>
-      <div id="secretFiles" style="margin-top:16px;text-align:left;max-width:820px;margin-left:auto;margin-right:auto"></div>
-    </div>
-  </section>
-
   <section id="contact" class="container" style="padding: 0 0 40px">
     <div class="card" style="padding: 24px">
       <div class="inner">
@@ -141,18 +128,6 @@
       <div><span class="muted">Сделано с заботой о деталях.</span></div>
     </div>
   </footer>
-
-  <div class="modal" id="secretModal" aria-hidden="true">
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="secretHeading">
-      <h3 id="secretHeading">Доступ к разделу «Совершенно Секретно»</h3>
-      <p>Введите пароль, чтобы открыть раздел.</p>
-      <div class="row" style="margin-top:8px">
-        <input class="input" id="secretInput" type="password" placeholder="Пароль" />
-        <button class="btn" id="secretOk" type="button">ОК</button>
-        <button class="btn secondary" id="secretCancel" type="button">Отмена</button>
-      </div>
-    </div>
-  </div>
 
   <script src="frontend/script.js"></script>
   <script src="frontend/router.js"></script>
