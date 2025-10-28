@@ -53,8 +53,11 @@ def read_file():
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
-        full_path = os.path.join(DATA_DIR, path)
-        if not os.path.exists(full_path) or not full_path.startswith(os.path.abspath(DATA_DIR)):
+        base_dir = os.path.abspath(DATA_DIR)
+        full_path = os.path.abspath(os.path.join(base_dir, path))
+        if not full_path.startswith(base_dir + os.sep):
+            return jsonify({'error': 'invalid path'}), 400
+        if not os.path.exists(full_path):
             return jsonify({'error': 'invalid path'}), 400
         with open(full_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -68,8 +71,11 @@ def delete_file():
         path = request.args.get('path')
         if not path:
             return jsonify({'error': 'path required'}), 400
-        full_path = os.path.join(DATA_DIR, path)
-        if not os.path.exists(full_path) or not full_path.startswith(os.path.abspath(DATA_DIR)):
+        base_dir = os.path.abspath(DATA_DIR)
+        full_path = os.path.abspath(os.path.join(base_dir, path))
+        if not full_path.startswith(base_dir + os.sep):
+            return jsonify({'error': 'invalid path'}), 400
+        if not os.path.exists(full_path):
             return jsonify({'error': 'invalid path'}), 400
         os.remove(full_path)
         return jsonify({'status': 'ok'}), 200
