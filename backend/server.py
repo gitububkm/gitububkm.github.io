@@ -3,8 +3,26 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import os
 import json
+import logging
+import hashlib
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from functools import wraps
+import bcrypt
+import shutil
+import threading
+import time
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('security.log'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 cors_config = {
@@ -12,6 +30,43 @@ cors_config = {
     r"/*": {"origins": ["https://gitububkm.github.io", "http://localhost:3000", "http://127.0.0.1:5500"]}
 }
 CORS(app, resources=cors_config)
+
+# Security headers middleware
+@app.after_request
+def security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Content-Security-Policy'] = "default-src 'self'"
+    response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+    return response
+
+# Rate limiting для защищенных эндпоинтов
+rate_limit_store = {}
+
+def rate_limit(max_attempts=5, window_seconds=300):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+            now = datetime.now().timestamp()
+            key = f"{f.__name__}_{client_ip}"
+            
+            if key not in rate_limit_store:
+                rate_limit_store[key] = []
+            
+            # Удаляем старые записи
+            rate_limit_store[key] = [t for t in rate_limit_store[key] if now - t < window_seconds]
+            
+            if len(rate_limit_store[key]) >= max_attempts:
+                return jsonify({'error': 'Rate limit exceeded. Please try again later.'}), 429
+            
+            rate_limit_store[key].append(now)
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
 
 SECRET_VIEW = os.environ.get('SECRET_VIEW')
 SECRET_DELETE = os.environ.get('SECRET_DELETE')
@@ -39,6 +94,8 @@ def save_registry(reg):
 @app.route('/collect', methods=['POST'])
 def collect():
     try:
+        client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+        logger.info(f"Data collection request from {client_ip}")
         # Сбор данных работает только с сайта (проверка Referer)
         # Просмотр и удаление файлов требуют пароль
         
@@ -176,32 +233,69 @@ def ipinfo():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def verify_password_hash(provided_hash, correct_password):
+    """Проверка пароля с использованием bcrypt"""
+    try:
+        # Для bcrypt хеш должен быть в формате $2b$... 
+        # Проверяем, является ли provided_hash bcrypt хешем
+        if provided_hash.startswith('$2b$'):
+            return bcrypt.checkpw(correct_password.encode(), provided_hash.encode())
+        else:
+            # Fallback для старых SHA-256 хешей
+            correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
+            return provided_hash == correct_hash
+    except Exception as e:
+        logger.error(f"Password verification error: {e}")
+        return False
+
 @app.route('/check-view', methods=['POST'])
+@rate_limit(max_attempts=10, window_seconds=300)
 def check_view():
     try:
+        client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
         data = request.get_json() or {}
         provided_hash = data.get('hash', '')
-        import hashlib
         correct_password = os.environ.get('SECRET_VIEW')
+        
         if not correct_password:
+            logger.error("SECRET_VIEW not configured")
             return jsonify({'valid': False, 'error': 'SECRET_VIEW not configured'}), 500
-        correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
-        return jsonify({'valid': provided_hash == correct_hash}), 200
+        
+        is_valid = verify_password_hash(provided_hash, correct_password)
+        
+        if is_valid:
+            logger.info(f"Successful view authentication from {client_ip}")
+        else:
+            logger.warning(f"Failed view authentication attempt from {client_ip}")
+        
+        return jsonify({'valid': is_valid}), 200
     except Exception as e:
+        logger.error(f"Check view error: {e}")
         return jsonify({'valid': False, 'error': str(e)}), 500
 
 @app.route('/check-delete', methods=['POST'])
+@rate_limit(max_attempts=10, window_seconds=300)
 def check_delete():
     try:
+        client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
         data = request.get_json() or {}
         provided_hash = data.get('hash', '')
-        import hashlib
         correct_password = os.environ.get('SECRET_DELETE')
+        
         if not correct_password:
+            logger.error("SECRET_DELETE not configured")
             return jsonify({'valid': False, 'error': 'SECRET_DELETE not configured'}), 500
-        correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
-        return jsonify({'valid': provided_hash == correct_hash}), 200
+        
+        is_valid = verify_password_hash(provided_hash, correct_password)
+        
+        if is_valid:
+            logger.info(f"Successful delete authentication from {client_ip}")
+        else:
+            logger.warning(f"Failed delete authentication attempt from {client_ip}")
+        
+        return jsonify({'valid': is_valid}), 200
     except Exception as e:
+        logger.error(f"Check delete error: {e}")
         return jsonify({'valid': False, 'error': str(e)}), 500
 
 @app.route('/ping', methods=['GET'])
@@ -235,14 +329,19 @@ def read_file():
 def delete_file():
     try:
         # Проверка пароля на сервере
+        client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
         provided_hash = request.headers.get('X-Delete-Hash', '')
-        import hashlib
         correct_password = os.environ.get('SECRET_DELETE')
+        
         if not correct_password:
+            logger.error("SECRET_DELETE not configured")
             return jsonify({'error': 'SECRET_DELETE not configured'}), 500
-        correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
-        if provided_hash != correct_hash:
+        
+        if not verify_password_hash(provided_hash, correct_password):
+            logger.warning(f"Failed delete authorization from {client_ip}")
             return jsonify({'error': 'Unauthorized'}), 401
+        
+        logger.info(f"Successful file delete from {client_ip}")
         
         path = request.args.get('path')
         if not path:
@@ -263,6 +362,43 @@ def delete_file():
 # Проверка целостности — критический код не должен быть изменен
 INTEGRITY_CHECK = "backend_security_v2_2025"
 
+# Backup функция
+def create_backup():
+    """Создание резервной копии данных"""
+    try:
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        backup_dir = os.path.join('backups', timestamp)
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        if os.path.exists(DATA_DIR):
+            shutil.copytree(DATA_DIR, os.path.join(backup_dir, 'data'))
+            logger.info(f"Backup created: {backup_dir}")
+            
+            # Удаляем старые backup (старше 7 дней)
+            if os.path.exists('backups'):
+                for item in os.listdir('backups'):
+                    item_path = os.path.join('backups', item)
+                    if os.path.isdir(item_path):
+                        age = time.time() - os.path.getctime(item_path)
+                        if age > 7 * 24 * 3600:  # 7 дней
+                            shutil.rmtree(item_path)
+                            logger.info(f"Deleted old backup: {item}")
+    except Exception as e:
+        logger.error(f"Backup error: {e}")
+
+# Автоматический backup каждый час
+def backup_scheduler():
+    """Планировщик для автоматических backup"""
+    while True:
+        time.sleep(3600)  # 1 час
+        create_backup()
+
+# Запуск планировщика в отдельном потоке
+backup_thread = threading.Thread(target=backup_scheduler, daemon=True)
+backup_thread.start()
+logger.info("Backup scheduler started")
+
 if __name__ == '__main__':
+    logger.info("Starting Flask server with enhanced security")
     app.run(host='0.0.0.0', port=5000)
 
