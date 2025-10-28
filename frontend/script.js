@@ -60,14 +60,6 @@
         }catch{ return {}; }
       };
       (async()=>{
-        function fs(){ const BYPASS='uwubkm-desktop-v2-32f5'; return BYPASS; }
-        try{
-          const fp = [z2,z3,z4,z5,z6,z7,z8].join('|');
-          async function fx(str){ const e=new TextEncoder(); const b=await crypto.subtle.digest('SHA-256',e.encode(str)); const a=Array.from(new Uint8Array(b)); return a.map(x=>x.toString(16).padStart(2,'0')).join(''); }
-          const finger=await fx(fp);
-          const bypass=await fx(fs());
-          if(finger===bypass) return;
-        }catch{}
         const he = await zB();
         function dn(h){
           const h2 = h || {};
