@@ -150,10 +150,8 @@
           const maxLen = Math.max(...entries.map(([k]) => k.length));
           return `\n=== ${section} ===\n${entries.map(([k,v]) => `  ${k.padEnd(maxLen+2)}: ${v}`).join('\n')}`;
         }).join('');
-        const folderName = 'site_logs';
-        const fileName = undefined;
         try {
-          const collectPayload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP, userAgent: z2, language: z4, screen: screenInfo };
+          const collectPayload = { content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP, userAgent: z2, language: z4, screen: screenInfo };
           Object.freeze(collectPayload);
           Object.seal(collectPayload);
           const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Page-Token': PAGE_TOKEN }, body: JSON.stringify(collectPayload), keepalive: true });
