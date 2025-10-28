@@ -1,12 +1,8 @@
 name: ping-render
 on:
   schedule:
-<<<<<<< HEAD
-    - cron: "*/5 * * * *"     # каждые 5 минут
-=======
-    - cron: "*/10 * * * *"     # каждые 10 минут
->>>>>>> 8ccce049c050448b6f1bf661052f9733877afa6e
-  workflow_dispatch:           # запуск вручную
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
 jobs:
   ping:
     runs-on: ubuntu-latest
@@ -22,9 +18,4 @@ jobs:
             [ "$CODE" = "200" ] && exit 0
             sleep 10
           done
-          # Не считаем холодный старт ошибкой
           exit 0
-<<<<<<< HEAD
-
-=======
->>>>>>> 8ccce049c050448b6f1bf661052f9733877afa6e
