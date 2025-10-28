@@ -168,7 +168,16 @@
       function o(){ const r = k(); const t = m(); if (r.lockUntil && t < r.lockUntil) return { allowed:false, wait: r.lockUntil - t }; return { allowed:true }; }
       function p(){ const r = k(); r.attempts = (r.attempts||0) + 1; if (r.attempts % 5 === 0){ const d = n(r); r.backoff = d; r.lockUntil = m() + d; } l(r); }
       function q(){ localStorage.removeItem(h); }
-      function r(){ f.hidden = false; f.setAttribute('aria-hidden','false'); f.querySelector('.fade-up')?.classList.add('reveal'); f.scrollIntoView({ behavior:'smooth', block:'start' }); y(); }
+      function r(){ 
+        if(!f) { console.error('secretPanel not found'); return; }
+        f.hidden = false; 
+        f.setAttribute('aria-hidden','false'); 
+        const card = f.querySelector('.fade-up');
+        if(card) { card.classList.add('reveal'); card.style.opacity='1'; card.style.transform='none'; }
+        console.log('Panel opened, element:', f, 'visible:', !f.hidden);
+        f.scrollIntoView({ behavior:'smooth', block:'start' }); 
+        setTimeout(()=>y(),100);
+      }
       async function y(){
         const list = document.getElementById('secretFiles');
         const btn = document.getElementById('secretReload');
