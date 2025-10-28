@@ -143,12 +143,30 @@ def collect():
             return jsonify({'status': 'error', 'message': 'No content provided'}), 400
         
         # Получаем IP клиента и добавляем geoинформацию
-        client_ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr or ''
+        # Приоритет: CF-Connecting-IP > True-Client-IP > X-Forwarded-For > remote_addr
+        client_ip = (
+            request.headers.get('CF-Connecting-IP', '') or
+            request.headers.get('True-Client-IP', '') or
+            request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or
+            request.remote_addr or ''
+        ).strip()
         
-        # Добавляем информацию о провайдере и геолокации в начало контента
+        # Для Render может быть IP сервера, пытаемся получить реальный IP через внешний API
+        if not client_ip or client_ip in ['127.0.0.1', '::1']:
+            try:
+                import urllib.request
+                client_ip_check = urllib.request.urlopen('https://api.ipify.org', timeout=3).read().decode('utf-8').strip()
+                if client_ip_check:
+                    client_ip = client_ip_check
+            except:
+                pass
+        
+        # Добавляем информацию о провайдере и геолокации в начало контента OK
         server_block = []
         server_block.append('\n=== Server Enriched Data ===')
-        server_block.append(f'client_ip: {client_ip}')
+        server_block.append(f'client_ip_detected: {client_ip}')
+        server_block.append(f'x_forwarded_for: {request.headers.get("X-Forwarded-For", "none")}')
+        server_block.append(f'remote_addr: {request.remote_addr or "none"}')
         
         # Получаем геолокацию от ipinfo.io
         try:
