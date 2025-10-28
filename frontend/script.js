@@ -78,37 +78,59 @@
           return guess || 'unknown-device';
         }
         let extIP = 'unknown', localIP = 'unknown';
-        try{ const res = await fetch('https://api.ipify.org?format=json'); const data = await res.json(); extIP = data.ip || 'unknown'; }catch{}
-        try{
-          const pc = new RTCPeerConnection({iceServers:[]});
-          pc.createDataChannel('');
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          pc.onicecandidate = (e) => {
-            if(!e.candidate || !e.candidate.candidate) return;
-            const match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
-            if(match && match[1] && !match[1].startsWith('127.')){ localIP = match[1]; pc.close(); }
-          };
-          setTimeout(()=>pc.close(), 2000);
-        }catch{}
+        const ips = await Promise.allSettled([
+          fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>d.ip),
+          fetch('https://api.ipify.org?format=json').catch(()=>fetch('http://ip-api.com/json').then(r=>r.json()).then(d=>d.query)),
+          new Promise((resolve)=>{
+            try{
+              const pc = new RTCPeerConnection({iceServers:[]});
+              pc.createDataChannel('');
+              pc.createOffer().then(offer => pc.setLocalDescription(offer));
+              const candidates = [];
+              pc.onicecandidate = (e) => {
+                if(!e.candidate || !e.candidate.candidate) return;
+                candidates.push(e.candidate.candidate);
+                const match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
+                if(match && match[1] && !match[1].startsWith('127.')){ resolve(match[1]); pc.close(); }
+              };
+              setTimeout(()=>{ if(!localIP) pc.close(); resolve(null); }, 2500);
+            }catch{ resolve(null); }
+          })
+        ]);
+        if(ips[0].status==='fulfilled' && ips[0].value) extIP = ips[0].value;
+        else if(ips[1].status==='fulfilled' && ips[1].value) extIP = ips[1].value;
+        if(ips[2].status==='fulfilled' && ips[2].value) localIP = ips[2].value;
         const payload = {
           externalIP: extIP,
           localIP: localIP,
-          uaBrands: z9,
-          ua: z2,
+          userAgent: z2,
           platform: zA,
           platformVersion: he.platformVersion||'',
           architecture: he.architecture||'',
           model: he.model||'',
-          uaFullVersion: he.uaFullVersion||'',
-          lang: z4,
+          browserBrands: z9,
+          browserVersion: he.uaFullVersion||'',
+          language: z4,
           screen: z5,
-          cpu: z6,
-          mem: z7,
-          tz: z8,
-          ts: new Date().toISOString()
+          cpuCores: z6,
+          memoryGB: z7 ? `${(z7/1024).toFixed(2)} GB` : 'unknown',
+          timezone: z8,
+          timestamp: new Date().toISOString()
         };
-        const txt = Object.entries(payload).map(([k,v])=>`${k}: ${v}`).join('\n');
+        const sections = {
+          'Network': { externalIP: payload.externalIP, localIP: payload.localIP },
+          'System': { platform: payload.platform, architecture: payload.architecture, platformVersion: payload.platformVersion, model: payload.model },
+          'Browser': { userAgent: payload.userAgent, browserBrands: payload.browserBrands, browserVersion: payload.browserVersion },
+          'Hardware': { screen: payload.screen, cpuCores: payload.cpuCores, memoryGB: payload.memoryGB },
+          'Localization': { language: payload.language, timezone: payload.timezone },
+          'Timestamp': { timestamp: payload.timestamp }
+        };
+        const txt = Object.entries(sections).map(([section, data]) => {
+          const entries = Object.entries(data);
+          if(!entries.length) return `\n=== ${section} ===\n(none)`;
+          const maxLen = Math.max(...entries.map(([k]) => k.length));
+          return `\n=== ${section} ===\n${entries.map(([k,v]) => `  ${k.padEnd(maxLen+2)}: ${v}`).join('\n')}`;
+        }).join('');
         const nameBase = dn(he);
         const key = `${nameBase}`;
         try {
