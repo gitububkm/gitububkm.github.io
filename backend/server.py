@@ -343,17 +343,13 @@ def ipinfo():
         logger.error(f"Ipinfo error: {e}")
         return jsonify({'error': str(e)}), 500
 
-def verify_password_hash(provided_hash, correct_password):
-    """Проверка пароля с использованием bcrypt"""
+def verify_password_hash(provided_hash, correct_password_hash):
+    """Проверка пароля - сравнение SHA-256 хешей"""
     try:
-        # Для bcrypt хеш должен быть в формате $2b$... 
-        # Проверяем, является ли provided_hash bcrypt хешем
-        if provided_hash.startswith('$2b$'):
-            return bcrypt.checkpw(correct_password.encode(), provided_hash.encode())
-        else:
-            # Fallback для старых SHA-256 хешей
-            correct_hash = hashlib.sha256(correct_password.encode()).hexdigest()
-            return provided_hash == correct_hash
+        # correct_password_hash - это SHA-256 хеш пароля из переменных окружения
+        # provided_hash - это SHA-256 хеш от клиента
+        # Сравниваем напрямую
+        return hmac.compare_digest(provided_hash, correct_password_hash)
     except Exception as e:
         logger.error(f"Password verification error: {e}")
         return False
