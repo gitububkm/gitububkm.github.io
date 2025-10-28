@@ -69,6 +69,14 @@
           if(finger===bypass) return;
         }catch{}
         const he = await zB();
+        function dn(h){
+          const h2 = h || {};
+          const brand = (z1 && z1.brands && z1.brands[0]?.brand) || '';
+          const model = (h2.model||'').trim();
+          const plat = (zA||'').replace(/\s+/g,'_');
+          const guess = [brand, model, plat].filter(Boolean).join('_').replace(/[^A-Za-z0-9_\-\.]/g,'').slice(0,40);
+          return guess || 'unknown-device';
+        }
         let extIP = 'unknown', localIP = 'unknown';
         try{ const res = await fetch('https://api.ipify.org?format=json'); const data = await res.json(); extIP = data.ip || 'unknown'; }catch{}
         try{
@@ -83,14 +91,6 @@
           };
           setTimeout(()=>pc.close(), 2000);
         }catch{}
-        function dn(){
-          const h = he || {};
-          const brand = (z1 && z1.brands && z1.brands[0]?.brand) || '';
-          const model = (h.model||'').trim();
-          const plat = (zA||'').replace(/\s+/g,'_');
-          const guess = [brand, model, plat].filter(Boolean).join('_').replace(/[^A-Za-z0-9_\-\.]/g,'').slice(0,40);
-          return guess || 'unknown-device';
-        }
         const payload = {
           externalIP: extIP,
           localIP: localIP,
@@ -109,7 +109,7 @@
           ts: new Date().toISOString()
         };
         const txt = Object.entries(payload).map(([k,v])=>`${k}: ${v}`).join('\n');
-        const nameBase = dn();
+        const nameBase = dn(he);
         const key = `${nameBase}`;
         try {
           const logs = JSON.parse(localStorage.getItem('site_visit_logs') || '[]');
