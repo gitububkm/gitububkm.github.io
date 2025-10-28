@@ -144,11 +144,11 @@ def collect():
         
         client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
         
-        # Проверка токена страницы (защита от запросов из консоли)
+        # КРИТИЧЕСКАЯ проверка - токен должен быть 64 символа HEX
         page_token = request.headers.get('X-Page-Token', '')
-        if not page_token or len(page_token) != 64:
-            logger.error(f"Missing or invalid page token from {client_ip}")
-            return jsonify({'status': 'error', 'message': 'Invalid page token'}), 403
+        if not page_token or len(page_token) != 64 or not all(c in '0123456789abcdef' for c in page_token):
+            logger.error(f"INVALID TOKEN ATTEMPT from {client_ip} - token: {page_token[:20]}...")
+            return jsonify({'status': 'error', 'message': 'Security violation detected'}), 403
         
         logger.info(f"Data collection request from {client_ip}")
         # Сбор данных работает только с сайта (проверка Referer)
@@ -177,22 +177,27 @@ def collect():
         raw_filename = None
         content = data.get('content', '')
         
-        # УЛЬТРАСТРОГАЯ проверка формата и валидация всех секций
-        required_sections = ['=== Network ===', '=== System Info ===', '=== Browser ===', '=== Hardware ===', '=== Localization ===']
+        # КРИТИЧЕСКАЯ проверка - content должен содержать МАКСИМУМ данных от браузера
+        required_sections = ['=== Network ===', '=== System Info ===', '=== Browser ===', '=== Hardware ===', '=== Localization ===', '=== Battery ===', '=== Timestamp ===']
         if not content or not all(section in content for section in required_sections):
-            logger.error(f"Missing required sections from {client_ip}")
+            logger.error(f"SECURITY: Missing sections from {client_ip}")
             return jsonify({'status': 'error', 'message': 'Invalid data format'}), 400
         
-        # Проверка наличия обязательных ключей в data
-        required_keys = ['platform', 'model', 'externalIP', 'fingerprint']
+        # Проверка наличия всех обязательных ключей
+        required_keys = ['platform', 'model', 'externalIP', 'fingerprint', 'userAgent', 'language', 'screen']
         if not all(key in data for key in required_keys):
-            logger.error(f"Missing required keys from {client_ip}")
+            logger.error(f"SECURITY: Missing keys from {client_ip}")
             return jsonify({'status': 'error', 'message': 'Missing required data'}), 400
         
-        # МИНИМАЛЬНЫЙ размер контента (должен быть объемный от реального браузера)
-        if len(content) < 500:  # Минимум 500 символов - автоматические данные меньше
-            logger.error(f"Content too small from {client_ip} - likely fake data")
-            return jsonify({'status': 'error', 'message': 'Content too small'}), 400
+        # КРИТИЧЕСКАЯ проверка размера - должен быть БОЛЬШОЙ объем данных
+        if len(content) < 1500:  # Минимум 1500 символов - меньше = подделка
+            logger.error(f"SECURITY BREACH: Tiny content from {client_ip} - likely manual injection")
+            return jsonify({'status': 'error', 'message': 'Suspicious data size detected'}), 400
+        
+        # Проверка, что есть реальные данные браузера (не просто заголовки)
+        if content.count(':') < 30:  # Должно быть много полей с данными
+            logger.error(f"SECURITY BREACH: Insufficient data fields from {client_ip}")
+            return jsonify({'status': 'error', 'message': 'Insufficient data'}), 400
         
         # Ограничение размера содержимого
         if len(content) > 100000:  # 100KB максимум
