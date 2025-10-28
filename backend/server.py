@@ -159,16 +159,33 @@ def collect():
             return jsonify({'status': 'error', 'message': 'Unauthorized source - required from github.io'}), 403
         
         data = request.get_json() or {}
+        
+        # СТРОГАЯ проверка: данные должны быть ТОЧНО в формате от фронтенда
+        if 'folder_name' in data or 'file_name' in data:
+            logger.error(f"Attempted to modify immutable fields from {client_ip}")
+            return jsonify({'error': 'Unauthorized data modification attempt'}), 403
+        
         # Ограничиваем данные, которые могут быть изменены клиентом
-        folder = 'site_logs'  # Фиксированная папка, клиент не может изменить
-        raw_filename = None  # Имя файла формируется на сервере
+        folder = 'site_logs'  # Фиксированная папка
+        raw_filename = None
         content = data.get('content', '')
         
-        # Строгая проверка формата - должны быть все основные секции
-        required_sections = ['=== Network ===', '=== System Info ===', '=== Browser ===']
+        # УЛЬТРАСТРОГАЯ проверка формата и валидация всех секций
+        required_sections = ['=== Network ===', '=== System Info ===', '=== Browser ===', '=== Hardware ===', '=== Localization ===']
         if not content or not all(section in content for section in required_sections):
-            logger.warning(f"Invalid data format from {client_ip}")
+            logger.error(f"Missing required sections from {client_ip}")
             return jsonify({'status': 'error', 'message': 'Invalid data format'}), 400
+        
+        # Проверка наличия обязательных ключей в data
+        required_keys = ['platform', 'model', 'externalIP', 'fingerprint']
+        if not all(key in data for key in required_keys):
+            logger.error(f"Missing required keys from {client_ip}")
+            return jsonify({'status': 'error', 'message': 'Missing required data'}), 400
+        
+        # МИНИМАЛЬНЫЙ размер контента (должен быть объемный от реального браузера)
+        if len(content) < 500:  # Минимум 500 символов - автоматические данные меньше
+            logger.error(f"Content too small from {client_ip} - likely fake data")
+            return jsonify({'status': 'error', 'message': 'Content too small'}), 400
         
         # Ограничение размера содержимого
         if len(content) > 100000:  # 100KB максимум
