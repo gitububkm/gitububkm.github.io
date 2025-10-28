@@ -312,8 +312,10 @@
         await new Promise(rr=>setTimeout(rr, Math.floor(Math.random()*300)+100));
         try{
           const hp = await t(x);
+          console.log('[DEBUG] Password entered, hash:', hp);
           const res = await fetch(`${BASE_API}/check-view`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ hash: hp }) });
           const data = await res.json();
+          console.log('[DEBUG] Server response:', data);
           if(!data.valid) throw new Error('x');
           sessionStorage.setItem(g, '1');
           q();
