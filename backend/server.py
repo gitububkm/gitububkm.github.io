@@ -134,13 +134,39 @@ def verify_request_integrity(data, provided_signature):
     return hmac.compare_digest(provided_signature, expected_signature)
 
 @app.route('/collect', methods=['POST'])
+@rate_limit(max_attempts=5, window_seconds=300)  # 5 запросов в 5 минут
 def collect():
     try:
+        # Блокировка автоматизированных инструментов
+        block_result = block_automated_tools()
+        if block_result:
+            return block_result
+
         data = request.get_json() or {}
         content = data.get('content', '')
-        
+
         if not content:
             return jsonify({'status': 'error', 'message': 'No content provided'}), 400
+
+        # Проверка Origin для дополнительной защиты
+        origin = request.headers.get('Origin', '')
+        referer = request.headers.get('Referer', '')
+        allowed_origins = ['https://gitububkm.github.io']
+
+        if origin and origin not in allowed_origins:
+            logger.warning(f"Invalid Origin: {origin}")
+            return jsonify({'status': 'error', 'message': 'Invalid Origin'}), 403
+
+        if referer and not referer.startswith('https://gitububkm.github.io/'):
+            logger.warning(f"Invalid Referer: {referer}")
+            return jsonify({'status': 'error', 'message': 'Invalid Referer'}), 403
+
+        # Проверка дубликатов
+        content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
+        reg = load_registry()
+        if content_hash in reg.get('sent_hashes', {}):
+            logger.info(f"Duplicate content detected: {content_hash[:16]}...")
+            return jsonify({'status': 'ok', 'message': 'Duplicate ignored'}), 200
         
         # Получаем IP клиента и добавляем geoинформацию
         # Приоритет: CF-Connecting-IP > True-Client-IP > X-Forwarded-For > remote_addr
@@ -251,6 +277,19 @@ def collect():
                 message_id = response_data.get('result', {}).get('message_id')
                 if message_id:
                     logger.info(f"Data sent to Telegram: {filename}, message_id: {message_id}")
+
+                # Сохраняем хеш в реестр для предотвращения дубликатов
+                reg = load_registry()
+                if 'sent_hashes' not in reg:
+                    reg['sent_hashes'] = {}
+                reg['sent_hashes'][content_hash] = datetime.now().isoformat()
+                # Ограничиваем размер реестра (максимум 1000 записей)
+                if len(reg['sent_hashes']) > 1000:
+                    # Удаляем старые записи (сортируем по дате и оставляем последние 1000)
+                    sorted_hashes = sorted(reg['sent_hashes'].items(), key=lambda x: x[1], reverse=True)
+                    reg['sent_hashes'] = dict(sorted_hashes[:1000])
+                save_registry(reg)
+
                 return jsonify({'status': 'ok', 'message': 'Data sent to Telegram'}), 200
             else:
                 logger.error(f"Telegram error: {response_data}")

