@@ -116,7 +116,6 @@
     const webglVendor = gl2 ? gl2.getParameter(gl2.VENDOR)||'' : '';
     const webglRenderer = gl2 ? gl2.getParameter(gl2.RENDERER)||'' : '';
     
-    // Canvas fingerprint
     const canvasFingerprint = (() => {
       try{
         canvas.width = 200; canvas.height = 50;
@@ -133,7 +132,6 @@
       }catch{ return 'unknown'; }
     })();
     
-    // Plugins
     const plugins = [];
     if(navigator.plugins && navigator.plugins.length > 0){
       for(let i=0; i<navigator.plugins.length; i++){
@@ -142,7 +140,6 @@
     }
     const pluginsInfo = plugins.length ? plugins.join(', ') : 'none';
     
-    // MIME types
     const mimeTypes = [];
     if(navigator.mimeTypes && navigator.mimeTypes.length > 0){
       for(let i=0; i<navigator.mimeTypes.length; i++){
@@ -151,10 +148,8 @@
     }
     const mimeTypesInfo = mimeTypes.length ? mimeTypes.join(', ') : 'none';
     
-    // Timezone offset
     const timezoneOffset = new Date().getTimezoneOffset();
     
-    // Session storage size
     const storageSize = (() => {
       try {
         let total = 0;
@@ -172,7 +167,6 @@
       }catch{ return 'unknown'; }
     })();
     
-    // Performance timing
     const perfInfo = (() => {
       try{
         const perf = window.performance;
@@ -182,7 +176,6 @@
       }catch{ return 'unknown'; }
     })();
     
-    // GPU
     const gpuInfo = (() => {
       try{
         if('gpu' in navigator && navigator.gpu){
@@ -195,10 +188,8 @@
       }catch{ return 'unknown'; }
     })();
     
-    // Window size and position
     const windowInfo = `Outer: ${window.outerWidth}x${window.outerHeight}, Inner: ${window.innerWidth}x${window.innerHeight}`;
     
-    // Permissions
     const permissions = [];
     const perms = ['camera', 'microphone', 'geolocation', 'notifications', 'persistent-storage'];
     for(const perm of perms){

