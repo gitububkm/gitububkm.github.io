@@ -52,7 +52,9 @@
         out.textContent = 'Ошибка: не найден lab6.js или метод LAB6.verifyMFA.';
         return;
       }
-      document.getElementById('mfa_mock_code').textContent = '—';
+      // Отображаем сгенерированный код MFA
+      const mfaCode = LAB6.peekMFACode();
+      document.getElementById('mfa_mock_code').textContent = mfaCode || '—';
 
       async function verify(){
         out.textContent='';
