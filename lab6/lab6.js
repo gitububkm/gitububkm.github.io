@@ -102,7 +102,9 @@
 
       if (user.mfa) {
         const code = (Math.floor(Math.random() * 1_000_000)).toString().padStart(6, '0');
+        console.log('Generated MFA code:', code);
         db.lastMFA = { username, code, ts: now() };
+        console.log('Saved to db.lastMFA:', db.lastMFA);
         writeDB(db);
         setCurrentSession({ pending: true, username }); // временная отметка
         return 'mfa';
@@ -121,7 +123,10 @@
 
     peekMFACode() {
       const db = readDB();
-      return db.lastMFA?.code || null;
+      console.log('peekMFACode - db.lastMFA:', db.lastMFA);
+      const code = db.lastMFA?.code || null;
+      console.log('peekMFACode - returning code:', code);
+      return code;
     },
 
     async verifyMFA(code) {

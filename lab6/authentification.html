@@ -53,8 +53,11 @@
         return;
       }
       // Отображаем сгенерированный код MFA
-      const mfaCode = LAB6.peekMFACode();
-      document.getElementById('mfa_mock_code').textContent = mfaCode || '—';
+      setTimeout(() => {
+        const mfaCode = LAB6.peekMFACode();
+        console.log('MFA Code from peekMFACode:', mfaCode);
+        document.getElementById('mfa_mock_code').textContent = mfaCode || '—';
+      }, 100);
 
       async function verify(){
         out.textContent='';
