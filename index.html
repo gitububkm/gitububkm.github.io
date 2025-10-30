@@ -131,5 +131,17 @@
 
   <script src="frontend/script.js"></script>
   <script src="frontend/router.js"></script>
+  <script>
+    // Обработчик клика на логотип для перехода в начало страницы
+    document.addEventListener('DOMContentLoaded', function() {
+      const logo = document.querySelector('.logo');
+      if (logo && logo.textContent === 'gitububkm') {
+        logo.style.cursor = 'pointer';
+        logo.addEventListener('click', function() {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+      }
+    });
+  </script>
 </body>
 </html>

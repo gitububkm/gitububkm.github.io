@@ -44,6 +44,18 @@
   <script src="lab6.js"></script>
   <script src="router.js"></script>
   <script>
+    // Обработчик клика на логотип для перехода на главную страницу
+    document.addEventListener('DOMContentLoaded', function() {
+      const logo = document.querySelector('.logo');
+      if (logo && logo.textContent === 'gitububkm') {
+        logo.style.cursor = 'pointer';
+        logo.addEventListener('click', function() {
+          window.location.href = '/';
+        });
+      }
+    });
+  </script>
+  <script>
     (function () {
       const u = document.getElementById('l_username');
       const p = document.getElementById('l_password');
