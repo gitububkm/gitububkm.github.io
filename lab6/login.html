@@ -61,21 +61,15 @@
         const name = (u.value||'').trim(), pass = p.value||'';
         if(!name || !pass){ out.textContent = 'Введите логин и пароль'; return; }
         try{
-          console.log('Calling LAB6.login with:', name, 'password length:', pass.length);
           const step = await LAB6.login(name, pass);
-          console.log('LAB6.login returned:', step);
           if(step === 'mfa'){
             out.textContent = 'MFA включена. Переходим к подтверждению…';
-            setTimeout(()=> {
-              console.log('Redirecting to authentification page');
-              location.href='authentification';
-            }, 500);
+            setTimeout(()=> location.href='authentification', 500);
           }else{
             out.textContent = 'Вход выполнен. Открываю панель…';
             setTimeout(()=>location.href='user', 500);
           }
         }catch(e){
-          console.error('Login error:', e);
           out.textContent = e.message || 'Ошибка входа';
         }
       }
