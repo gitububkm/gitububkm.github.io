@@ -91,13 +91,16 @@
   <script>
     // Обработчик клика на логотип для перехода на главную страницу
     document.addEventListener('DOMContentLoaded', function() {
-      const logo = document.querySelector('.logo');
-      if (logo && logo.textContent === 'gitububkm') {
-        logo.style.cursor = 'pointer';
-        logo.addEventListener('click', function() {
-          window.location.href = '/';
-        });
-      }
+      const logos = document.querySelectorAll('.logo');
+      logos.forEach(logo => {
+        if (logo.textContent === 'gitububkm') {
+          logo.style.cursor = 'pointer';
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/';
+          });
+        }
+      });
     });
   </script>
   <script>

@@ -134,13 +134,16 @@
   <script>
     // Обработчик клика на логотип для перехода в начало страницы
     document.addEventListener('DOMContentLoaded', function() {
-      const logo = document.querySelector('.logo');
-      if (logo && logo.textContent === 'gitububkm') {
-        logo.style.cursor = 'pointer';
-        logo.addEventListener('click', function() {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
-      }
+      const logos = document.querySelectorAll('.logo');
+      logos.forEach(logo => {
+        if (logo.textContent === 'gitububkm') {
+          logo.style.cursor = 'pointer';
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        }
+      });
     });
   </script>
 </body>
