@@ -34,9 +34,14 @@
 
   function readDB() {
     const raw = localStorage.getItem(NS);
-    return raw ? JSON.parse(raw) : { users: [], sessions: {}, lastMFA: null };
+    const db = raw ? JSON.parse(raw) : { users: [], sessions: {}, lastMFA: null };
+    console.log('readDB - lastMFA:', db.lastMFA);
+    return db;
   }
-  function writeDB(db) { localStorage.setItem(NS, JSON.stringify(db)); }
+  function writeDB(db) {
+    console.log('writeDB - saving lastMFA:', db.lastMFA);
+    localStorage.setItem(NS, JSON.stringify(db));
+  }
 
   function getUser(db, username) { return db.users.find(u => u.username === username); }
 
@@ -93,13 +98,18 @@
     },
 
     async login(username, password) {
+      console.log('Login attempt for user:', username);
       const db = readDB();
       const user = getUser(db, username);
+      console.log('User found:', !!user);
       if (!user) throw new Error('Неверные логин или пароль');
 
       const calc = await pbkdf2(password, user.salt);
-      if (calc !== user.hash) throw new Error('Неверные логин или пароль');
+      const passwordValid = calc === user.hash;
+      console.log('Password valid:', passwordValid);
+      if (!passwordValid) throw new Error('Неверные логин или пароль');
 
+      console.log('User MFA enabled:', user.mfa);
       if (user.mfa) {
         const code = (Math.floor(Math.random() * 1_000_000)).toString().padStart(6, '0');
         console.log('Generated MFA code:', code);
@@ -107,6 +117,7 @@
         console.log('Saved to db.lastMFA:', db.lastMFA);
         writeDB(db);
         setCurrentSession({ pending: true, username }); // временная отметка
+        console.log('Returning MFA step');
         return 'mfa';
       } else {
         const sid = rid(16);

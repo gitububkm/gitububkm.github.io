@@ -35,6 +35,7 @@
         <div style="max-width:640px;margin:12px auto 0;border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--card)">
           <div style="font-weight:700">Код подтверждения</div>
           <div style="font-size:20px;margin-top:6px"><span id="mfa_mock_code">—</span></div>
+          <button class="btn secondary" id="generate_test_code" type="button" style="margin-top:8px">Сгенерировать тестовый код</button>
         </div>
 
         <pre id="mfa_log" class="muted" style="max-width:720px;margin:12px auto 0; text-align:left;"></pre>
@@ -52,12 +53,33 @@
         out.textContent = 'Ошибка: не найден lab6.js или метод LAB6.verifyMFA.';
         return;
       }
-      // Отображаем сгенерированный код MFA
-      setTimeout(() => {
+      // Функция для обновления отображения кода
+      function updateMFACode() {
         const mfaCode = LAB6.peekMFACode();
         console.log('MFA Code from peekMFACode:', mfaCode);
         document.getElementById('mfa_mock_code').textContent = mfaCode || '—';
-      }, 100);
+      }
+
+      // Отображаем сгенерированный код MFA
+      setTimeout(updateMFACode, 100);
+
+      // Обработчик для тестовой кнопки
+      document.getElementById('generate_test_code').addEventListener('click', () => {
+        // Генерируем тестовый код и сохраняем его напрямую в localStorage
+        const testCode = (Math.floor(Math.random() * 1_000_000)).toString().padStart(6, '0');
+        console.log('Generated test code:', testCode);
+
+        // Читаем текущую базу данных
+        const raw = localStorage.getItem('lab6.v1');
+        const db = raw ? JSON.parse(raw) : { users: [], sessions: {}, lastMFA: null };
+
+        // Сохраняем тестовый код
+        db.lastMFA = { username: 'test', code: testCode, ts: Date.now() };
+        localStorage.setItem('lab6.v1', JSON.stringify(db));
+
+        console.log('Saved test MFA code to localStorage:', db.lastMFA);
+        updateMFACode();
+      });
 
       async function verify(){
         out.textContent='';
