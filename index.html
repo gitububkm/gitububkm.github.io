@@ -12,10 +12,12 @@
 <body>
   <nav class="nav">
     <div class="container wrap" style="padding-top:6px; padding-bottom:6px; gap:12px">
-      <div style="display:flex; flex-direction:column; line-height:1">
-        <div class="logo">gitububkm</div>
-        <div class="logo" style="font-size:12px; opacity:.9; margin-top:2px">LXXXX</div>
-      </div>
+      <a id="brandAdmin" href="admin.html" style="text-decoration:none; color:inherit">
+        <div style="display:flex; flex-direction:column; line-height:1">
+          <div class="logo">gitububkm</div>
+          <div id="versionRoman" class="logo" style="font-size:12px; opacity:.9; margin-top:2px">XCI</div>
+        </div>
+      </a>
       <div class="actions">
         <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">GitHub</a>
         <a class="btn" href="https://t.me/ububkmburry" target="_blank" rel="noreferrer">Написать</a>
@@ -87,26 +89,17 @@
   <script src="js/main.js"></script>
   <script src="frontend/router.js"></script>
   <script>
-    // Обработчик клика на логотип для перехода в начало страницы
+    // Привязка клика к общей кнопке (ник + римские цифры)
     document.addEventListener('DOMContentLoaded', function() {
-      const logos = document.querySelectorAll('.logo');
-      logos.forEach(logo => {
-        if (logo.textContent === 'gitububkm') {
-          logo.style.cursor = 'pointer';
-          logo.addEventListener('click', function(e) {
-            e.preventDefault();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          });
-        }
-        if (logo.textContent === 'LXXXX') {
-          logo.style.cursor = 'pointer';
-          logo.addEventListener('click', function(e) {
-            e.preventDefault();
-            // Переход в админ‑панель только с главной страницы
-            window.location.href = 'admin.html';
-          });
-        }
-      });
+      var brand = document.getElementById('brandAdmin');
+      if (brand) {
+        brand.style.cursor = 'pointer';
+        brand.addEventListener('click', function(e){ e.preventDefault(); window.location.href = 'admin.html'; });
+      }
+      // Если нужно зеркалировать версию в другом месте — пример:
+      // var v = document.getElementById('versionRoman')?.textContent || '';
+      // var mirror = document.getElementById('versionMirror');
+      // if (mirror) mirror.textContent = v;
     });
   </script>
 </body>
