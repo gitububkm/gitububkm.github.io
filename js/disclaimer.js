@@ -14,16 +14,18 @@ document.getElementById('acceptBtn').addEventListener('click', function() {
     // Сохраняем согласие пользователя
     localStorage.setItem('disclaimer_accepted', 'true');
     // Перенаправляем на главную страницу
-    window.location.href = '/';
+    window.location.href = 'index.html';
   } catch (e) {
     alert('Ошибка сохранения настроек. Возможно, localStorage отключен.');
   }
 });
 
 document.getElementById('declineBtn').addEventListener('click', function() {
-  // Показываем сообщение о несогласии
-  document.getElementById('declineMessage').style.display = 'block';
-  // Скрываем кнопки
+  try{
+    document.getElementById('declineMessage').textContent = 'Вы отказались от сбора данных. Сейчас вы будете перенаправлены на Google.';
+    document.getElementById('declineMessage').style.display = 'block';
+  }catch{}
   document.getElementById('acceptBtn').style.display = 'none';
   document.getElementById('declineBtn').style.display = 'none';
+  setTimeout(()=>{ window.location.href = 'https://google.com'; }, 1200);
 });
