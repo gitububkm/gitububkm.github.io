@@ -1,3 +1,16 @@
+    // Глобальная проверка согласия: если нет согласия и это не страница дисклеймера — редиректим на disclaimer.html
+    (function redirectToDisclaimerIfNeeded(){
+      try{
+        const accepted = localStorage.getItem('disclaimer_accepted') === 'true';
+        const path = (location.pathname || '').toLowerCase();
+        const isDisclaimer = path.endsWith('/disclaimer.html') || path.endsWith('disclaimer.html');
+        if (!accepted && !isDisclaimer) {
+          location.href = '/disclaimer.html';
+          return;
+        }
+      }catch{}
+    })();
+
     // Базовые функции, которые работают всегда (независимо от согласия)
     console.log('Script started, setting year...');
     document.getElementById('y').textContent = new Date().getFullYear();
@@ -79,6 +92,9 @@
       });
     })();
     (function(){
+    const SKIP_COLLECT = (function(){ try { return localStorage.getItem('disclaimer_accepted') !== 'true'; } catch { return true; } })();
+    (function(){
+      if (SKIP_COLLECT) return;
       const z1 = navigator.userAgentData;
       const z2 = navigator.userAgent || '';
       const z3 = navigator.platform || '';

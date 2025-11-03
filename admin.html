@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Админ-панель · gitububkm</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="logo">Admin</div>
+    </div>
+  </nav>
+
+  <main class="container" style="max-width:720px; padding:32px 16px">
+    <h1 style="margin:24px 0">Админ-панель</h1>
+
+    <section class="card" style="padding:24px">
+      <div class="inner">
+        <h2 style="margin-bottom:12px">Вход</h2>
+        <p class="muted" style="margin-bottom:16px">Для доступа введите админ‑пароль.</p>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap">
+          <input id="adminPwd" type="password" placeholder="Пароль" style="flex:1; min-width:220px; padding:10px; border-radius:8px; border:1px solid var(--border)" />
+          <button id="loginBtn" class="btn" type="button">Войти</button>
+        </div>
+        <div id="loginMsg" class="muted" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+    <section id="panel" class="card" style="padding:24px; margin-top:16px; display:none">
+      <div class="inner">
+        <h2 style="margin-bottom:12px">Сбросить список исключений</h2>
+        <p class="muted" style="margin-bottom:16px">Очистить реестр отправленных записей (hashes и недавние тексты) на сервере, чтобы устройства считались «новыми» и сбор повторился по правилам уникальности.</p>
+        <button id="resetBtn" class="btn danger" type="button">Сбросить исключения сейчас</button>
+        <div id="resetMsg" class="muted" style="margin-top:10px"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/admin.js"></script>
+</body>
+</html>
+
+
