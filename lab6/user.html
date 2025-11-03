@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ЛР-6 — Панель пользователя · gitububkm</title>
+  <link rel="icon" href="../assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="links">
+        <a href="index#lab6-entry">ЛР-6</a>
+      </div>
+      <div class="actions">
+        <button class="btn secondary" id="logout" type="button">Выйти</button>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero container center">
+    <h1 class="fade-up">Панель пользователя</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">Роли, refresh, смена пароля, MFA и управление сессиями.</p>
+
+    <div class="card fade-up" style="padding:24px; margin-top:24px">
+      <div class="inner">
+        <div id="state" style="max-width:860px;margin:0 auto 8px;text-align:left"></div>
+
+        <div class="grid" style="padding:0">
+          <article class="card"><div class="inner">
+            <h2>Доступ</h2><p class="muted">Проверка авторизации по роли.</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+              <button class="btn" id="a_user" type="button">USER</button>
+              <button class="btn" id="a_admin" type="button">ADMIN</button>
+              <button class="btn secondary" id="a_refresh" type="button">Обновить access</button>
+            </div>
+            <pre id="a_log" class="muted"></pre>
+          </div></article>
+
+          <article class="card"><div class="inner">
+            <h2>Смена пароля</h2><p class="muted">Все сессии будут сброшены.</p>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+              <input class="input" id="p_old" type="password" placeholder="Старый пароль" />
+              <input class="input" id="p_new" type="password" placeholder="Новый пароль" />
+              <button class="btn" id="p_btn" type="button">Сменить</button>
+            </div>
+            <pre id="p_log" class="muted"></pre>
+          </div></article>
+
+          <article class="card"><div class="inner">
+            <h2>MFA</h2>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+              <button class="btn" id="mfa_enable" type="button">Включить</button>
+              <button class="btn secondary" id="mfa_disable" type="button">Выключить</button>
+            </div>
+            <pre id="mfa_log" class="muted"></pre>
+          </div></article>
+
+          <article class="card"><div class="inner">
+            <h2>Роли (admin)</h2>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+              <input class="input" id="role_user" placeholder="Имя пользователя" />
+              <select class="input" id="role_value">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+              </select>
+              <button class="btn" id="role_set" type="button">Назначить</button>
+            </div>
+            <pre id="role_log" class="muted"></pre>
+          </div></article>
+
+          <article class="card"><div class="inner">
+            <h2>Сессии</h2>
+            <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+              <button class="btn" id="s_list" type="button">Показать</button>
+              <button class="btn secondary" id="s_kill" type="button">Завершить текущую</button>
+              <button class="btn secondary" id="s_kill_all" type="button">Завершить все</button>
+            </div>
+            <pre id="s_log" class="muted"></pre>
+          </div></article>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <script>document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('reveal')));</script>
+  <script src="lab6.js"></script>
+  <script src="router.js"></script>
+  <script>
+    // Обработчик клика на логотип для перехода на главную страницу
+    document.addEventListener('DOMContentLoaded', function() {
+      const logos = document.querySelectorAll('.logo');
+      logos.forEach(logo => {
+        if (logo.textContent === 'gitububkm') {
+          logo.style.cursor = 'pointer';
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/';
+          });
+        }
+      });
+    });
+  </script>
+  <script>
+    (function () {
+      if (!window.LAB6) { alert('lab6.js не найден'); location.replace('login'); return; }
+      if (!LAB6.current()) { location.replace('login'); return; }
+
+      const stateBox = document.getElementById('state');
+      function renderState(){
+        const s = LAB6.current();
+        stateBox.innerHTML = `
+          <div><strong>Пользователь:</strong> ${s?.username ?? '—'}</div>
+          <div><strong>Роль:</strong> ${s?.role ?? '—'}</div>
+          <div><strong>Access:</strong> ${s?.access ? 'выдан' : '—'}</div>
+          <div><strong>Refresh:</strong> ${s?.refresh ? 'выдан' : '—'}</div>
+        `;
+      }
+      renderState();
+
+      document.getElementById('logout').onclick = ()=>{ LAB6.logout(); location.replace('login'); };
+
+      document.getElementById('a_user').onclick   = async ()=> document.getElementById('a_log').textContent   = await LAB6.call('user').catch(e=>e.message);
+      document.getElementById('a_admin').onclick  = async ()=> document.getElementById('a_log').textContent   = await LAB6.call('admin').catch(e=>e.message);
+      document.getElementById('a_refresh').onclick= async ()=> { const m = await LAB6.refresh().catch(e=>e.message); document.getElementById('a_log').textContent = m; renderState(); };
+
+      document.getElementById('p_btn').onclick = async ()=>{
+        const o = document.getElementById('p_old').value, n = document.getElementById('p_new').value;
+        const m = await LAB6.changePassword(o, n).catch(e=>e.message);
+        document.getElementById('p_log').textContent = m;
+        if (m.startsWith('OK')) setTimeout(()=> location.replace('login'), 800);
+      };
+
+      document.getElementById('mfa_enable').onclick  = async ()=> document.getElementById('mfa_log').textContent  = await LAB6.setMFA(true).catch(e=>e.message);
+      document.getElementById('mfa_disable').onclick = async ()=> document.getElementById('mfa_log').textContent  = await LAB6.setMFA(false).catch(e=>e.message);
+
+      document.getElementById('role_set').onclick = async ()=>{
+        const u = document.getElementById('role_user').value.trim();
+        const r = document.getElementById('role_value').value;
+        document.getElementById('role_log').textContent = await LAB6.setRole(u, r).catch(e=>e.message);
+      };
+
+      document.getElementById('s_list').onclick     = ()=> document.getElementById('s_log').textContent = LAB6.listSessions();
+      document.getElementById('s_kill').onclick     = ()=> { LAB6.killCurrent();  document.getElementById('s_log').textContent = 'Текущая сессия завершена'; setTimeout(()=>location.replace('login'), 600); };
+      document.getElementById('s_kill_all').onclick = ()=> { LAB6.killAllMine();   document.getElementById('s_log').textContent = 'Все сессии пользователя завершены'; setTimeout(()=>location.replace('login'), 600); };
+    })();
+  </script>
+</body>
+</html>

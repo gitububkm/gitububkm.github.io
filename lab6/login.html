@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ЛР-6 — Авторизация · gitububkm</title>
+  <link rel="icon" href="../assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="links">
+        <a href="index#features">Проекты</a>
+        <a href="index#contact">Контакты</a>
+        <a href="index#lab6-entry">ЛР-6</a>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="register">Регистрация</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero container center">
+    <h1 class="fade-up">Вход в систему</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">Если включена MFA, потребуется код подтверждения.</p>
+
+    <div class="card fade-up" style="padding:24px; margin-top:24px">
+      <div class="inner">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+          <input class="input" id="l_username" placeholder="Имя пользователя" autocomplete="username" />
+          <input class="input" id="l_password" type="password" placeholder="Пароль" autocomplete="current-password" />
+          <button class="btn" id="l_btn" type="button">Войти</button>
+        </div>
+        <pre id="l_log" class="muted" style="max-width:720px;margin:12px auto 0; text-align:left;"></pre>
+      </div>
+    </div>
+  </header>
+
+  <!-- проявляем fade-up -->
+  <script>document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('reveal')));</script>
+
+  <script src="lab6.js"></script>
+  <script src="router.js"></script>
+  <script>
+    // Обработчик клика на логотип для перехода на главную страницу
+    document.addEventListener('DOMContentLoaded', function() {
+      const logos = document.querySelectorAll('.logo');
+      logos.forEach(logo => {
+        if (logo.textContent === 'gitububkm') {
+          logo.style.cursor = 'pointer';
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/';
+          });
+        }
+      });
+    });
+  </script>
+  <script>
+    (function () {
+      const u = document.getElementById('l_username');
+      const p = document.getElementById('l_password');
+      const b = document.getElementById('l_btn');
+      const out = document.getElementById('l_log');
+
+      if (!window.LAB6 || typeof LAB6.login !== 'function') {
+        out.textContent = 'Ошибка: не найден lab6.js или метод LAB6.login.';
+        b.disabled = true;
+        return;
+      }
+
+      async function doLogin(){
+        out.textContent = '';
+        const name = (u.value||'').trim(), pass = p.value||'';
+        if(!name || !pass){ out.textContent = 'Введите логин и пароль'; return; }
+        try{
+          const step = await LAB6.login(name, pass);
+          if(step === 'mfa'){
+            out.textContent = 'MFA включена. Переходим к подтверждению…';
+            setTimeout(()=> location.href='authentification', 500);
+          }else{
+            out.textContent = 'Вход выполнен. Открываю панель…';
+            setTimeout(()=>location.href='user', 500);
+          }
+        }catch(e){
+          out.textContent = e.message || 'Ошибка входа';
+        }
+      }
+
+      b.addEventListener('click', doLogin);
+      p.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+      u.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+    })();
+  </script>
+</body>
+</html>
