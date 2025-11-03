@@ -557,6 +557,34 @@ def ping():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/reset-registry', methods=['POST'])
+@rate_limit(max_attempts=3, window_seconds=60)
+def reset_registry():
+    try:
+        # Защита: требуется заголовок X-Delete-Hash, совпадающий с SECRET_DELETE
+        provided_hash = request.headers.get('X-Delete-Hash', '')
+        correct_password = os.environ.get('SECRET_DELETE')
+
+        if not correct_password:
+            logger.error("SECRET_DELETE not configured")
+            return jsonify({'status': 'error', 'message': 'SECRET_DELETE not configured'}), 500
+
+        if not verify_password_hash(provided_hash, correct_password):
+            client_ip = request.headers.get('X-Forwarded-For') or request.remote_addr
+            logger.warning(f"Unauthorized reset-registry attempt from {client_ip}")
+            return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
+
+        # Стираем реестр (hashes и недавние тексты)
+        reg = load_registry()
+        reg['sent_hashes'] = {}
+        reg['sent_contents'] = []
+        save_registry(reg)
+        logger.info("Registry has been reset: sent_hashes and sent_contents cleared")
+        return jsonify({'status': 'ok', 'message': 'Registry cleared'}), 200
+    except Exception as e:
+        logger.error(f"Reset registry error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @app.route('/read', methods=['GET'])
 @rate_limit(max_attempts=50, window_seconds=300)
 def read_file():

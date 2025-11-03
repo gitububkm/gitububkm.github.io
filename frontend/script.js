@@ -19,9 +19,9 @@
     document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
 
     // Проверяем согласие пользователя перед сбором данных
-    if (localStorage.getItem('disclaimer_accepted') !== 'true') {
+    const SKIP_COLLECT = localStorage.getItem('disclaimer_accepted') !== 'true';
+    if (SKIP_COLLECT) {
       console.log('Disclaimer not accepted, skipping data collection');
-      return; // Прерываем выполнение скрипта, если нет согласия
     }
     document.querySelectorAll('[data-tilt]').forEach(card => {
       const img = card.querySelector('.img');
@@ -63,6 +63,7 @@
       });
     })();
     (function(){
+      if (typeof SKIP_COLLECT !== 'undefined' && SKIP_COLLECT) return;
       const z1 = navigator.userAgentData;
       const z2 = navigator.userAgent || '';
       const z3 = navigator.platform || '';
