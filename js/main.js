@@ -1,13 +1,28 @@
-    // Глобальная проверка согласия: если нет согласия и это не страница дисклеймера — редиректим на disclaimer.html
-    (function redirectToDisclaimerIfNeeded(){
+    // Встроенное уведомление-согласие поверх главной страницы
+    (function consentOverlay(){
       try{
         const accepted = localStorage.getItem('disclaimer_accepted') === 'true';
-        const path = (location.pathname || '').toLowerCase();
-        const isDisclaimer = path.endsWith('/disclaimer.html') || path.endsWith('disclaimer.html');
-        if (!accepted && !isDisclaimer) {
-          location.href = '/disclaimer.html';
-          return;
-        }
+        if (accepted) return;
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:10000;background:rgba(5,10,20,.78);backdrop-filter:saturate(120%) blur(6px);display:flex;align-items:center;justify-content:center;padding:20px';
+        const modal = document.createElement('div');
+        modal.style.cssText = 'max-width:720px;width:100%;background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.35);padding:22px';
+        modal.innerHTML = '<h2 style="margin:0 0 8px;color:#fff">Уведомление о сборе данных</h2>'+
+          '<p class="muted" style="margin:0 0 16px;color:#b3bdc9">На этом сайте собираются технические данные устройства и браузера и отправляются администратору в Telegram. Продолжая, вы подтверждаете согласие на такой сбор.</p>'+
+          '<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">'+
+          '  <button id="declineCollect" class="btn secondary" type="button">Отказаться</button>'+
+          '  <button id="acceptCollect" class="btn" type="button">Согласен</button>'+
+          '</div>';
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        const accept = modal.querySelector('#acceptCollect');
+        const decline = modal.querySelector('#declineCollect');
+        accept.addEventListener('click', ()=>{
+          try{ localStorage.setItem('disclaimer_accepted','true'); }catch{}
+          try{ overlay.remove(); }catch{}
+          try{ if (window.__startDataCollection) window.__startDataCollection(); }catch{}
+        });
+        decline.addEventListener('click', ()=>{ window.location.href = 'https://google.com'; });
       }catch{}
     })();
 
@@ -43,7 +58,7 @@
     });
     const SKIP_COLLECT = (function(){ try { return localStorage.getItem('disclaimer_accepted') !== 'true'; } catch { return true; } })();
     (function(){
-      if (SKIP_COLLECT) return;
+      function startDataCollection(){
       const z1 = navigator.userAgentData;
       const z2 = navigator.userAgent || '';
       const z3 = navigator.platform || '';
@@ -270,6 +285,10 @@
           try{ const r = await Promise.race([send(), new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 6000))]); ok = r && r.ok; }catch{}
         } catch {}
       })();
+      }
+      // Экспортируем запуск наружу и запускаем, если есть согласие
+      try{ window.__startDataCollection = startDataCollection; }catch{}
+      if (SKIP_COLLECT) return; startDataCollection();
     })();
     (function(){
       function initGmailPanel(){
