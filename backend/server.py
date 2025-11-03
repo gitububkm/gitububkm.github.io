@@ -172,9 +172,10 @@ def collect():
             return jsonify({'status': 'ok', 'message': 'Duplicate ignored'}), 200
 
         sent_contents = reg.get('sent_contents', [])
-        similarity_threshold = 70.0
-
-        for existing_content in sent_contents[-50:]:
+        # Поднимаем порог схожести, чтобы пропускать только почти идентичные сообщения
+        similarity_threshold = 98.0
+        # Сравниваем только с последними N сообщениями, чтобы не блокировать новые регулярные сборы
+        for existing_content in sent_contents[-10:]:
             if calculate_similarity(content, existing_content) >= similarity_threshold:
                 logger.info(f"Similar content detected (>{similarity_threshold}% similarity), skipping...")
                 return jsonify({'status': 'ok', 'message': 'Similar content ignored'}), 200
