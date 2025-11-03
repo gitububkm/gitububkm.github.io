@@ -72,9 +72,9 @@ def rate_limit(max_attempts=5, window_seconds=300):
             rate_limit_store[key] = [t for t in rate_limit_store[key] if now - t < window_seconds]
             
             if len(rate_limit_store[key]) >= max_attempts:
-                blocked_ips[client_ip] = now + 1800
-                logger.error(f"IP {client_ip} blocked for 30 minutes after exceeding rate limit on {f.__name__}")
-                return jsonify({'error': 'Rate limit exceeded. IP blocked for 30 minutes.'}), 429
+                blocked_ips[client_ip] = now + 90
+                logger.error(f"IP {client_ip} blocked for 90 seconds after exceeding rate limit on {f.__name__}")
+                return jsonify({'error': 'Rate limit exceeded. IP blocked for 90 seconds.'}), 429
             
             rate_limit_store[key].append(now)
             return f(*args, **kwargs)
