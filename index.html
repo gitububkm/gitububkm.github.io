@@ -105,6 +105,14 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
           });
         }
+        if (logo.textContent === 'LXXXV') {
+          logo.style.cursor = 'pointer';
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Переход в админ‑панель только с главной страницы
+            window.location.href = 'admin.html';
+          });
+        }
       });
     });
   </script>
