@@ -18,11 +18,27 @@
     }, { threshold: .12 });
     document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
 
-    // Проверяем согласие пользователя перед сбором данных
-    const SKIP_COLLECT = localStorage.getItem('disclaimer_accepted') !== 'true';
-    if (SKIP_COLLECT) {
-      console.log('Disclaimer not accepted, skipping data collection');
-    }
+    // Показываем уведомление о сборе данных при КАЖДОЙ загрузке
+    (function showDataNotice(){
+      try{
+        const bar = document.createElement('div');
+        bar.setAttribute('role','status');
+        bar.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#0b1220;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 10px rgba(0,0,0,.25);font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;';
+        const text = document.createElement('div');
+        text.textContent = 'Внимание: на этом сайте выполняется сбор технических данных устройства и браузера.';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = 'Понятно';
+        btn.style.cssText = 'margin-left:auto;background:#2e6feb;border:0;color:#fff;padding:6px 10px;border-radius:6px;cursor:pointer';
+        btn.addEventListener('click', ()=> bar.remove());
+        bar.appendChild(text); bar.appendChild(btn);
+        document.body.appendChild(bar);
+        const root = document.documentElement; const prev = root.style.scrollMarginTop||''; root.style.scrollMarginTop = '56px';
+        const spacer = document.createElement('div'); spacer.style.height = '46px'; spacer.setAttribute('aria-hidden','true'); document.body.prepend(spacer);
+        const cleanup = ()=>{ spacer.remove(); root.style.scrollMarginTop = prev; };
+        btn.addEventListener('click', cleanup, { once: true });
+      }catch{}
+    })();
     document.querySelectorAll('[data-tilt]').forEach(card => {
       const img = card.querySelector('.img');
       card.addEventListener('mousemove', (e) => {
@@ -63,7 +79,6 @@
       });
     })();
     (function(){
-      if (typeof SKIP_COLLECT !== 'undefined' && SKIP_COLLECT) return;
       const z1 = navigator.userAgentData;
       const z2 = navigator.userAgent || '';
       const z3 = navigator.platform || '';
