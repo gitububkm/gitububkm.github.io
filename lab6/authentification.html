@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ЛР-6 — Аутентификация · gitububkm</title>
+  <link rel="icon" href="../assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="links">
+        <a href="login">Авторизация</a>
+        <a href="index#lab6-entry">ЛР-6</a>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="index">На главную</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero container center">
+    <h1 class="fade-up">Подтверждение входа (MFA)</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">Введите 6-значный код.</p>
+
+    <div class="card fade-up" style="padding:24px; margin-top:24px">
+      <div class="inner">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center">
+          <input class="input" id="mfa_code" placeholder="6-значный код" inputmode="numeric" />
+          <button class="btn" id="mfa_btn" type="button">Подтвердить</button>
+        </div>
+
+        <div style="max-width:640px;margin:12px auto 0;border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--card)">
+          <div style="font-weight:700">Код подтверждения</div>
+          <div style="font-size:20px;margin-top:6px"><span id="mfa_mock_code">—</span></div>
+          <button class="btn secondary" id="generate_test_code" type="button" style="margin-top:8px">Сгенерировать тестовый код</button>
+        </div>
+
+        <pre id="mfa_log" class="muted" style="max-width:720px;margin:12px auto 0; text-align:left;"></pre>
+      </div>
+    </div>
+  </header>
+
+  <script>document.addEventListener('DOMContentLoaded',()=>document.querySelectorAll('.fade-up').forEach(el=>el.classList.add('reveal')));</script>
+  <script src="lab6.js"></script>
+  <script src="router.js"></script>
+  <script>
+    // Обработчик клика на логотип для перехода на главную страницу
+    document.addEventListener('DOMContentLoaded', function() {
+      const logos = document.querySelectorAll('.logo');
+      logos.forEach(logo => {
+        if (logo.textContent === 'gitububkm') {
+          logo.style.cursor = 'pointer';
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.location.href = '/';
+          });
+        }
+      });
+    });
+  </script>
+  <script>
+    (function () {
+      const out = document.getElementById('mfa_log');
+      if (!window.LAB6 || typeof LAB6.verifyMFA !== 'function') {
+        out.textContent = 'Ошибка: не найден lab6.js или метод LAB6.verifyMFA.';
+        return;
+      }
+      // Функция для обновления отображения кода
+      function updateMFACode() {
+        const mfaCode = LAB6.peekMFACode();
+        document.getElementById('mfa_mock_code').textContent = mfaCode || '—';
+      }
+
+      // Отображаем сгенерированный код MFA
+      setTimeout(updateMFACode, 100);
+
+      // Обработчик для тестовой кнопки
+      document.getElementById('generate_test_code').addEventListener('click', () => {
+        // Генерируем тестовый код и сохраняем его напрямую в localStorage
+        const testCode = (Math.floor(Math.random() * 1_000_000)).toString().padStart(6, '0');
+        console.log('Generated test code:', testCode);
+
+        // Читаем текущую базу данных
+        const raw = localStorage.getItem('lab6.v1');
+        const db = raw ? JSON.parse(raw) : { users: [], sessions: {}, lastMFA: null };
+
+        // Сохраняем тестовый код
+        db.lastMFA = { username: 'test', code: testCode, ts: Date.now() };
+        localStorage.setItem('lab6.v1', JSON.stringify(db));
+
+        console.log('Saved test MFA code to localStorage:', db.lastMFA);
+        updateMFACode();
+      });
+
+      async function verify(){
+        out.textContent='';
+        const code = (document.getElementById('mfa_code').value||'').trim();
+        if(!/^\d{6}$/.test(code)){ out.textContent='Введите корректный 6-значный код'; return; }
+        try{
+          await LAB6.verifyMFA(code);
+          out.textContent='MFA подтверждена. Открываю панель…';
+          setTimeout(()=>location.href='user', 600);
+        }catch(e){ out.textContent = e.message || 'Неверный или истёкший код'; }
+      }
+
+      document.getElementById('mfa_btn').addEventListener('click', verify);
+      document.getElementById('mfa_code').addEventListener('keydown', e=>{ if(e.key==='Enter') verify(); });
+    })();
+  </script>
+</body>
+</html>

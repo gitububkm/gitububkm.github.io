@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>gitububkm</title>
+  <meta name="description" content="Минималистичный сайт: крупная типографика, чистые блоки, плавные анимации." />
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/main.css">
+  <script>
+    // Проверяем согласие пользователя на сбор данных
+    if (localStorage.getItem('disclaimer_accepted') !== 'true') {
+      // Если не согласился, перенаправляем на страницу с уведомлением
+      window.location.replace('disclaimer.html');
+    }
+  </script>
+</head>
+<body>
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="logo">LXXXV</div>
+      <div class="links">
+        <a href="#contact">Контакты</a>
+      </div>
+      <div class="actions">
+        <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">GitHub</a>
+        <a class="btn" href="https://t.me/ububkmburry" target="_blank" rel="noreferrer">Написать</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero container center">
+    <h1 class="fade-up">Красиво. Быстро. Минимально.</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">Чистая типографика, фокус на продукте и детали, которые чувствуются.</p>
+    <div class="cta fade-up" style="transition-delay:.12s">
+      <a class="btn" href="https://github.com/gitububkm?tab=repositories" target="_blank" rel="noreferrer">Смотреть проекты</a>
+      <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">Узнать больше</a>
+    </div>
+    <div class="device fade-up" style="transition-delay:.18s">
+      <div class="bezel">
+        <div class="screen" role="img" aria-label="Демонстрация продукта"></div>
+      </div>
+    </div>
+  </header>
+
+  
+
+  <section id="contact" class="container" style="padding: 0 0 40px">
+    <div class="card" style="padding: 24px">
+      <div class="inner">
+        <h2>Свяжитесь со мной</h2>
+        <p class="muted">Открыт к предложениям и коллаборациям.</p>
+        <div class="reveal-wrap">
+          <div class="cta">
+            <button class="btn" id="gmailToggle" type="button" aria-expanded="false">Gmail <span class="chev">▾</span></button>
+            <a class="btn" href="https://t.me/ububkmburry" target="_blank" rel="noreferrer">Telegram</a>
+            <a class="btn secondary" href="https://github.com/gitububkm" target="_blank" rel="noreferrer">GitHub</a>
+          </div>
+          <div class="reveal-panel" id="gmailPanel" aria-hidden="true">
+            <div class="panel-inner">
+              <span class="email">ububkmart@gmail.com</span>
+              <div style="display:flex;gap:8px">
+                <a class="btn secondary" href="mailto:ububkmart@gmail.com">Написать</a>
+                <button class="btn ghost" id="copyEmail" type="button">Копировать</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="lab6-entry" class="container" style="padding: 0 0 60px">
+    <div class="card" style="padding: 24px">
+      <div class="inner center">
+        <h2>Лабораторная работа 6 (ТИМП)</h2>
+        <p class="muted">Прототип аутентификации и авторизации с ролями, сессиями и MFA. Красиво и по шагам.</p>
+        <div class="cta" style="margin-top:16px">
+          <a class="btn" href="lab6/register">Протестировать</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container cols">
+      <div><strong>gitububkm</strong><br><span class="muted">© <span id="y"></span> Все права защищены.</span></div>
+      <div><a href="#contact">Контакты</a></div>
+      <div><span class="muted">Сделано с заботой о деталях.</span></div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="frontend/router.js"></script>
+  <script>
+    // Обработчик клика на логотип для перехода в начало страницы
+    document.addEventListener('DOMContentLoaded', function() {
+      const logos = document.querySelectorAll('.logo');
+      logos.forEach(logo => {
+        if (logo.textContent === 'gitububkm') {
+          logo.style.cursor = 'pointer';
+          logo.addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

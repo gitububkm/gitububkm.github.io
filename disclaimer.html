@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <title>Уведомление · gitububkm</title>
+  <meta name="description" content="Уведомление о сборе данных на сайте gitububkm.github.io" />
+  <link rel="icon" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/disclaimer.css">
+</head>
+<body>
+  <nav class="nav">
+    <div class="container wrap">
+      <div class="logo">gitububkm</div>
+      <div class="logo">LXXXV</div>
+    </div>
+  </nav>
+
+  <header class="hero container center">
+    <h1 class="fade-up">Уведомление о конфиденциальности</h1>
+    <p class="muted fade-up" style="transition-delay:.06s">Прежде чем продолжить, пожалуйста, ознакомьтесь с информацией о сборе данных.</p>
+
+    <div class="card fade-up" style="padding:32px; margin:32px auto; max-width:800px; width:100%">
+      <div class="inner">
+        <h2 style="margin-bottom:24px; color: var(--fg); text-align:center">Сбор информации о посетителях</h2>
+
+        <div style="text-align:left; line-height:1.6; margin-bottom:32px; max-width:600px; margin-left:auto; margin-right:auto">
+          <p style="margin-bottom:16px"><strong>При посещении этого сайта автоматически собирается следующая информация:</strong></p>
+
+          <ul style="margin:16px 0; padding-left:24px">
+            <li><strong>Сеть:</strong> IP-адрес, провайдер, геолокация, тип соединения</li>
+            <li><strong>Система:</strong> Операционная система, архитектура, модель устройства</li>
+            <li><strong>Браузер:</strong> Тип браузера, версия, установленные плагины</li>
+            <li><strong>Устройство:</strong> Разрешение экрана, объем RAM, информация о GPU</li>
+            <li><strong>Дополнительно:</strong> Язык, часовой пояс, уровень заряда батареи</li>
+          </ul>
+
+          <p style="margin:16px 0"><strong>Цель сбора данных:</strong> Аналитические цели для улучшения сайта и понимания аудитории.</p>
+
+          <p style="margin:16px 0"><strong>Передача данных:</strong> Собранная информация автоматически отправляется администратору сайта в Telegram для обработки.</p>
+
+          <p style="margin:16px 0; color: var(--accent); font-weight:600"><strong>Важно:</strong> Сбор данных происходит только при посещении главной страницы сайта после вашего согласия.</p>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px; align-items:center">
+          <button class="btn" id="acceptBtn" type="button" style="min-width:200px">
+            Я согласен, продолжить
+          </button>
+
+          <button class="btn secondary" id="declineBtn" type="button" style="min-width:200px">
+            Я не согласен
+          </button>
+        </div>
+
+        <p id="declineMessage" style="margin-top:24px; color: var(--muted); font-size:14px; display:none">
+          Если вы не согласны с сбором данных, пожалуйста, закройте эту вкладку браузера.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <footer style="margin-top:60px">
+    <div class="container cols">
+      <div><strong>gitububkm</strong><br><span class="muted">© <span id="y"></span> Все права защищены.</span></div>
+      <div><span class="muted">Сделано с заботой о прозрачности.</span></div>
+    </div>
+  </footer>
+
+  <script src="js/disclaimer.js"></script>
+</body>
+</html>
