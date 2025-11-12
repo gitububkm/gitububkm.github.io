@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Pineapple: Security Threat Presentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+        
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .slide {
+            display: none;
+            width: 90%;
+            max-width: 1200px;
+            background: white;
+            border-radius: 20px;
+            padding: 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: fadeIn 0.5s;
+        }
+        
+        .slide.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 3em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        h2 {
+            color: #764ba2;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+        
+        h3 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin: 25px 0 15px 0;
+        }
+        
+        p, li {
+            font-size: 1.3em;
+            line-height: 1.8;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        ul {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+        
+        li {
+            margin-bottom: 12px;
+        }
+        
+        .highlight {
+            background: linear-gradient(120deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .warning {
+            background: #ff6b6b;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #c92a2a;
+        }
+        
+        .info-box {
+            background: #e7f5ff;
+            border-left: 5px solid #339af0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+        
+        button {
+            background: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1em;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .icon {
+            font-size: 4em;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="slide-counter">
+        <span id="current-slide">1</span> / <span id="total-slides">12</span>
+    </div>
+    
+    <div class="presentation-container">
+        <!-- Slide 1: Title -->
+        <div class="slide active">
+            <h1>🌐 WiFi Pineapple</h1>
+            <div class="icon">🍍</div>
+            <h2 style="text-align: center; border: none; margin-top: 30px;">Understanding the Threat</h2>
+            <p style="text-align: center; font-size: 1.5em; color: #666; margin-top: 40px;">
+                Bardyshev Artem
+            </p>
+        </div>
+        
+        <!-- Slide 2: What is WiFi Pineapple? -->
+        <div class="slide">
+            <h2>What is WiFi Pineapple?</h2>
+            <div class="info-box">
+                <p><strong>WiFi Pineapple</strong> is a wireless security auditing tool developed by Hak5.</p>
+            </div>
+            <ul>
+                <li>Hardware device that looks like a <span class="highlight">router</span></li>
+                <li>Designed for <span class="highlight">penetration testing</span> and security research</li>
+                <li>Can be used <span class="highlight">legitimately</span> by security professionals</li>
+                <li>But also <span class="highlight">misused</span> by attackers</li>
+            </ul>
+            <p style="margin-top: 30px;"><strong>Key Point:</strong> It's a powerful tool that can be used for both good and malicious purposes.</p>
+        </div>
+        
+        <!-- Slide 3: How Does It Work? -->
+        <div class="slide">
+            <h2>How Does It Work?</h2>
+            <div class="two-column">
+                <div>
+                    <h3>1. Evil Twin Attack</h3>
+                    <p>Creates fake WiFi networks that mimic legitimate ones</p>
+                    <p style="margin-top: 20px;">Users connect thinking it's a trusted network</p>
+                </div>
+                <div>
+                    <h3>2. Karma Attack</h3>
+                    <p>Responds to all WiFi probe requests</p>
+                    <p style="margin-top: 20px;">Your device automatically connects to "remembered" networks</p>
+                </div>
+            </div>
+            <div class="warning" style="margin-top: 30px;">
+                <strong>⚠️ Danger:</strong> Once connected, all your internet traffic passes through the attacker's device!
+            </div>
+        </div>
+        
+        <!-- Slide 4: Technical Capabilities -->
+        <div class="slide">
+            <h2>Technical Capabilities</h2>
+            <ul>
+                <li><strong>Man-in-the-Middle (MITM) Attacks:</strong> Intercepts and monitors all network traffic</li>
+                <li><strong>SSL Stripping:</strong> Downgrades HTTPS connections to HTTP</li>
+                <li><strong>Credential Harvesting:</strong> Captures login credentials from unencrypted connections</li>
+                <li><strong>Session Hijacking:</strong> Steals cookies and session tokens</li>
+                <li><strong>Packet Injection:</strong> Injects malicious packets into the network</li>
+                <li><strong>Network Reconnaissance:</strong> Maps out connected devices and their activities</li>
+            </ul>
+        </div>
+        
+        <!-- Slide 5: Real-World Attack Scenario -->
+        <div class="slide">
+            <h2>Real-World Attack Scenario</h2>
+            <div style="background: #fff3cd; padding: 25px; border-radius: 10px; border-left: 5px solid #ffc107;">
+                <h3>Step 1: Setup</h3>
+                <p>Attacker places WiFi Pineapple in a public area (coffee shop, airport, hotel)</p>
+                
+                <h3>Step 2: Deception</h3>
+                <p>Device creates fake networks like "Free_WiFi", "Airport_WiFi", or mimics legitimate business networks</p>
+                
+                <h3>Step 3: Connection</h3>
+                <p>Victim's device automatically connects (Karma attack) or victim manually connects</p>
+                
+                <h3>Step 4: Exploitation</h3>
+                <p>All traffic is intercepted, credentials stolen, sensitive data captured</p>
+            </div>
+        </div>
+        
+        <!-- Slide 6: What Can Be Stolen? -->
+        <div class="slide">
+            <h2>What Can Be Stolen?</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Personal Information</h3>
+                    <ul>
+                        <li>Email credentials</li>
+                        <li>Social media passwords</li>
+                        <li>Banking information</li>
+                        <li>Personal messages</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Business Data</h3>
+                    <ul>
+                        <li>Corporate login credentials</li>
+                        <li>Confidential documents</li>
+                        <li>Client information</li>
+                        <li>Trade secrets</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="warning" style="margin-top: 30px;">
+                <strong>⚠️ Critical:</strong> Even encrypted connections can be compromised through SSL stripping!
+            </div>
+        </div>
+        
+        <!-- Slide 7: Why Is It Dangerous? -->
+        <div class="slide">
+            <h2>Why Is It So Dangerous?</h2>
+            <ul>
+                <li><strong>Easy to Use:</strong> Requires minimal technical knowledge</li>
+                <li><strong>Affordable:</strong> Costs around $100-200, accessible to anyone</li>
+                <li><strong>Hard to Detect:</strong> Looks like a normal router, operates silently</li>
+                <li><strong>Automatic Attacks:</strong> Karma attack works without user interaction</li>
+                <li><strong>Widespread Impact:</strong> Can affect multiple victims simultaneously</li>
+                <li><strong>Legal Gray Area:</strong> Legitimate tool, but illegal when used maliciously</li>
+            </ul>
+            <p style="margin-top: 30px; font-size: 1.1em; color: #d63384;">
+                <strong>Bottom Line:</strong> It makes sophisticated attacks accessible to non-experts.
+            </p>
+        </div>
+        
+        <!-- Slide 8: Who Is At Risk? -->
+        <div class="slide">
+            <h2>Who Is At Risk?</h2>
+            <div class="two-column">
+                <div>
+                    <h3>High Risk</h3>
+                    <ul>
+                        <li>Business travelers</li>
+                        <li>Remote workers</li>
+                        <li>Students on campus</li>
+                        <li>Public WiFi users</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Vulnerable Behaviors</h3>
+                    <ul>
+                        <li>Auto-connecting to WiFi</li>
+                        <li>Using public WiFi without VPN</li>
+                        <li>Ignoring security warnings</li>
+                        <li>Not checking network authenticity</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="info-box" style="margin-top: 30px;">
+                <p><strong>💡 Fact:</strong> Anyone using WiFi in public spaces is potentially at risk!</p>
+            </div>
+        </div>
+        
+        <!-- Slide 9: How to Protect Yourself -->
+        <div class="slide">
+            <h2>How to Protect Yourself</h2>
+            <h3>1. Use a VPN</h3>
+            <p>Always use a reputable VPN when connecting to public WiFi networks</p>
+            
+            <h3>2. Disable Auto-Connect</h3>
+            <p>Turn off automatic WiFi connection on your devices</p>
+            
+            <h3>3. Verify Network Names</h3>
+            <p>Ask staff for the correct WiFi network name before connecting</p>
+            
+            <h3>4. Use HTTPS</h3>
+            <p>Look for the padlock icon and ensure websites use HTTPS</p>
+            
+            <h3>5. Avoid Sensitive Activities</h3>
+            <p>Don't access banking or enter passwords on public WiFi</p>
+            
+            <h3>6. Keep Software Updated</h3>
+            <p>Regular updates patch security vulnerabilities</p>
+        </div>
+        
+        <!-- Slide 10: Detection Methods -->
+        <div class="slide">
+            <h2>How to Detect WiFi Pineapple?</h2>
+            <div class="two-column">
+                <div>
+                    <h3>Warning Signs</h3>
+                    <ul>
+                        <li>Multiple networks with similar names</li>
+                        <li>Networks appearing/disappearing</li>
+                        <li>Unexpected certificate warnings</li>
+                        <li>Slower than usual connection</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Technical Detection</h3>
+                    <ul>
+                        <li>Check MAC addresses</li>
+                        <li>Use WiFi analyzer apps</li>
+                        <li>Monitor for duplicate SSIDs</li>
+                        <li>Look for suspicious devices</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="info-box" style="margin-top: 30px;">
+                <p><strong>⚠️ Note:</strong> Detection is difficult, so prevention is key!</p>
+            </div>
+        </div>
+        
+        <!-- Slide 11: Legal and Ethical Considerations -->
+        <div class="slide">
+            <h2>Legal and Ethical Considerations</h2>
+            <div class="two-column">
+                <div>
+                    <h3>✅ Legal Uses</h3>
+                    <ul>
+                        <li>Security audits (with permission)</li>
+                        <li>Penetration testing</li>
+                        <li>Educational purposes</li>
+                        <li>Research with consent</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>❌ Illegal Uses</h3>
+                    <ul>
+                        <li>Unauthorized network access</li>
+                        <li>Stealing credentials</li>
+                        <li>Intercepting private data</li>
+                        <li>Identity theft</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="warning" style="margin-top: 30px;">
+                <strong>⚖️ Legal Warning:</strong> Using WiFi Pineapple to intercept communications without authorization is illegal in most countries and can result in serious criminal charges!
+            </div>
+        </div>
+        
+        <!-- Slide 12: Key Takeaways -->
+        <div class="slide">
+            <h2>Key Takeaways</h2>
+            <div style="font-size: 1.4em; line-height: 2;">
+                <p>🍍 <strong>WiFi Pineapple</strong> is a powerful security tool that can be used maliciously</p>
+                <p>⚠️ It creates fake networks to intercept your data</p>
+                <p>🔒 <strong>Always use VPN</strong> on public WiFi networks</p>
+                <p>🚫 <strong>Disable auto-connect</strong> to prevent automatic attacks</p>
+                <p>✅ <strong>Verify network names</strong> before connecting</p>
+                <p>📱 <strong>Stay vigilant</strong> - if something seems suspicious, don't connect!</p>
+            </div>
+            <div style="text-align: center; margin-top: 40px; font-size: 1.6em; color: #667eea;">
+                <strong>Stay Safe, Stay Secure!</strong>
+            </div>
+        </div>
+    </div>
+    
+    <div class="navigation">
+        <button onclick="previousSlide()">← Previous</button>
+        <button onclick="nextSlide()">Next →</button>
+    </div>
+    
+    <script>
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        document.getElementById('total-slides').textContent = totalSlides;
+        
+        function showSlide(n) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = (n + totalSlides) % totalSlides;
+            slides[currentSlide].classList.add('active');
+            document.getElementById('current-slide').textContent = currentSlide + 1;
+        }
+        
+        function nextSlide() {
+            showSlide(currentSlide + 1);
+        }
+        
+        function previousSlide() {
+            showSlide(currentSlide - 1);
+        }
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                previousSlide();
+            }
+        });
+        
+        // Touch gestures for mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        document.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+        });
+        
+        document.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        });
+        
+        function handleSwipe() {
+            if (touchEndX < touchStartX - 50) {
+                nextSlide();
+            }
+            if (touchEndX > touchStartX + 50) {
+                previousSlide();
+            }
+        }
+    </script>
+</body>
+</html>
+
