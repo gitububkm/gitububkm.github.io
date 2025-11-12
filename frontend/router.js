@@ -7,7 +7,8 @@
     'register': 'register.html',
     'login': 'login.html',
     'authentification': 'authentification.html',
-    'user': 'user.html'
+    'user': 'user.html',
+    'wifi': 'wifi.html'
   };
 
   function handleRoute() {
@@ -18,6 +19,15 @@
       const cleanPath = window.location.pathname.replace(/\.html$/, '');
       window.history.replaceState(null, null, cleanPath + hash);
       return;
+    }
+
+    if (routes[path] && path !== '' && path !== 'index') {
+      // Загружаем файл для маршрута
+      const filePath = routes[path];
+      if (filePath && !window.location.pathname.endsWith(filePath)) {
+        window.location.href = '/' + filePath + hash;
+        return;
+      }
     }
 
     if (!routes[path] && path !== '') {
