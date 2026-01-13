@@ -425,7 +425,8 @@ def collect():
             logger.warning("No content provided in request")
             return jsonify({'status': 'error', 'message': 'No content provided'}), 400
         
-        logger.info(f"Received data collection request, content length: {len(content)}")
+        user_agent = request.headers.get('User-Agent', 'unknown')
+        logger.info(f"Received data collection request, content length: {len(content)}, User-Agent: {user_agent[:100]}")
 
         origin = request.headers.get('Origin', '')
         referer = request.headers.get('Referer', '')
@@ -523,36 +524,50 @@ def collect():
         # Проверка на технический дубликат (игнорируя timestamp и другие изменяющиеся поля)
         # Перезагружаем реестр перед проверкой, чтобы убедиться, что у нас актуальные данные
         reg = load_registry()
-        technical_fingerprint = generate_technical_fingerprint(enriched_content)
-        if 'technical_fingerprints' not in reg:
-            reg['technical_fingerprints'] = {}
+        try:
+            technical_fingerprint = generate_technical_fingerprint(enriched_content)
+        except Exception as e:
+            logger.error(f"Error generating technical fingerprint: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            # Продолжаем без проверки fingerprint, если произошла ошибка
+            technical_fingerprint = None
         
-        existing_fingerprints = reg.get('technical_fingerprints', {})
-        logger.info(f"Technical fingerprint: {technical_fingerprint[:16]}... | Total fingerprints in registry: {len(existing_fingerprints)}")
-        
-        if technical_fingerprint in existing_fingerprints:
-            logger.warning(f"⚠️ Technical duplicate BLOCKED: {technical_fingerprint[:16]}...")
-            logger.warning(f"Previous send time: {existing_fingerprints[technical_fingerprint]}")
-            return jsonify({'status': 'ok', 'message': 'Duplicate ignored (only timestamp or other non-technical fields changed)'}), 200
-        
-        logger.info(f"✅ New technical fingerprint: {technical_fingerprint[:16]}... (will be saved after successful send)")
+        if technical_fingerprint:
+            if 'technical_fingerprints' not in reg:
+                reg['technical_fingerprints'] = {}
+            
+            existing_fingerprints = reg.get('technical_fingerprints', {})
+            logger.info(f"Technical fingerprint: {technical_fingerprint[:16]}... | Total fingerprints in registry: {len(existing_fingerprints)}")
+            
+            if technical_fingerprint in existing_fingerprints:
+                logger.warning(f"⚠️ Technical duplicate BLOCKED: {technical_fingerprint[:16]}...")
+                logger.warning(f"Previous send time: {existing_fingerprints[technical_fingerprint]}")
+                return jsonify({'status': 'ok', 'message': 'Duplicate ignored (only timestamp or other non-technical fields changed)'}), 200
+            
+            logger.info(f"✅ New technical fingerprint: {technical_fingerprint[:16]}... (will be saved after successful send)")
         
         # Валидация финального enriched_content перед отправкой
+        logger.info("Starting validation of enriched content...")
         is_valid, validation_message = validate_content_structure(enriched_content)
         if not is_valid:
-            logger.error(f"Enriched content validation failed: {validation_message}")
-            logger.error(f"Content preview (first 500 chars): {enriched_content[:500]}")
+            logger.error(f"❌ Enriched content validation FAILED: {validation_message}")
+            logger.error(f"User-Agent: {user_agent[:100]}")
+            logger.error(f"Content preview (first 1000 chars): {enriched_content[:1000]}")
             # Логируем структуру для отладки
             try:
                 structure = parse_content_structure(enriched_content)
                 logger.error(f"Parsed structure keys: {list(structure.keys())}")
                 for section, data in structure.items():
-                    logger.error(f"Section '{section}' has {len(data)} fields: {list(data.keys())[:5]}...")
+                    logger.error(f"Section '{section}' has {len(data)} fields: {list(data.keys())[:10]}...")
+                    # Показываем первые несколько значений для отладки
+                    for key, value in list(data.items())[:3]:
+                        logger.error(f"  {key}: {value[:50] if value else '(empty)'}")
             except Exception as e:
                 logger.error(f"Error parsing structure for debug: {e}")
             return jsonify({'status': 'error', 'message': f'Validation failed: {validation_message}'}), 400
         
-        logger.info("Content validation passed, preparing to send to Telegram")
+        logger.info("✅ Content validation passed, preparing to send to Telegram")
         
         telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
         telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '')
@@ -607,7 +622,9 @@ def collect():
             if response_data.get('ok'):
                 message_id = response_data.get('result', {}).get('message_id')
                 if message_id:
-                    logger.info(f"Data sent to Telegram: {filename}, message_id: {message_id}")
+                    logger.info(f"✅ Data sent to Telegram: {filename}, message_id: {message_id}")
+                else:
+                    logger.warning(f"⚠️ Telegram response OK but no message_id: {response_data}")
 
                 reg = load_registry()
                 if 'sent_hashes' not in reg:
@@ -619,7 +636,8 @@ def collect():
 
                 reg['sent_hashes'][content_hash] = datetime.now().isoformat()
                 reg['sent_contents'].append(content)
-                reg['technical_fingerprints'][technical_fingerprint] = datetime.now().isoformat()
+                if technical_fingerprint:
+                    reg['technical_fingerprints'][technical_fingerprint] = datetime.now().isoformat()
 
                 if len(reg['sent_hashes']) > 1000:
                     sorted_hashes = sorted(reg['sent_hashes'].items(), key=lambda x: x[1], reverse=True)
@@ -636,11 +654,14 @@ def collect():
 
                 return jsonify({'status': 'ok', 'message': 'Data sent to Telegram'}), 200
             else:
-                logger.error(f"Telegram error: {response_data}")
+                logger.error(f"❌ Telegram API error: {response_data}")
+                logger.error(f"Response details: {_json.dumps(response_data, indent=2)}")
                 return jsonify({'status': 'error', 'message': 'Failed to send to Telegram'}), 500
                 
         except Exception as e:
-            logger.error(f"Telegram send error: {e}")
+            logger.error(f"❌ Telegram send exception: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
             return jsonify({'status': 'error', 'message': str(e)}), 500
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
