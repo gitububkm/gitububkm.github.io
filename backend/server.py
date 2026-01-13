@@ -534,6 +534,8 @@ def collect():
             technical_fingerprint = None
         
         if technical_fingerprint:
+            # Перезагружаем реестр перед проверкой, чтобы убедиться, что у нас актуальные данные
+            reg = load_registry()
             if 'technical_fingerprints' not in reg:
                 reg['technical_fingerprints'] = {}
             
@@ -938,11 +940,23 @@ def reset_registry():
 
         # Стираем реестр (hashes, недавние тексты и технические fingerprint)
         reg = load_registry()
+        old_hashes_count = len(reg.get('sent_hashes', {}))
+        old_contents_count = len(reg.get('sent_contents', []))
+        old_fingerprints_count = len(reg.get('technical_fingerprints', {}))
+        
         reg['sent_hashes'] = {}
         reg['sent_contents'] = []
         reg['technical_fingerprints'] = {}
         save_registry(reg)
-        logger.info("Registry has been reset: sent_hashes, sent_contents and technical_fingerprints cleared")
+        
+        logger.info(f"✅ Registry RESET: cleared {old_hashes_count} hashes, {old_contents_count} contents, {old_fingerprints_count} fingerprints")
+        
+        # Проверяем, что реестр действительно очищен
+        verify_reg = load_registry()
+        verify_hashes = len(verify_reg.get('sent_hashes', {}))
+        verify_contents = len(verify_reg.get('sent_contents', []))
+        verify_fingerprints = len(verify_reg.get('technical_fingerprints', {}))
+        logger.info(f"✅ Registry verification: {verify_hashes} hashes, {verify_contents} contents, {verify_fingerprints} fingerprints (should all be 0)")
         return jsonify({'status': 'ok', 'message': 'Registry cleared'}), 200
     except Exception as e:
         logger.error(f"Reset registry error: {e}")
