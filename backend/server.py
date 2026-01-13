@@ -198,6 +198,81 @@ def parse_content_structure(content):
     
     return structure
 
+def generate_technical_fingerprint(content):
+    """Генерация технического fingerprint из данных (без timestamp и других изменяющихся полей)
+    
+    Игнорируемые поля (не включаются в fingerprint):
+    - timestamp (Timestamp)
+    - battery (Battery) - уровень батареи меняется
+    - timing (Performance) - может немного отличаться
+    - postal (Server Enriched Data) - может меняться
+    - timezoneOffset (Localization) - может меняться при переходе на летнее время
+    """
+    structure = parse_content_structure(content)
+    
+    # Ключевые технические поля для fingerprint
+    fingerprint_parts = []
+    
+    # Server Enriched Data (кроме postal)
+    server_data = structure.get('Server Enriched Data', {})
+    for key in ['client_ip_detected', 'x_forwarded_for', 'remote_addr', 'hostname', 
+                'city', 'region', 'country', 'loc', 'org', 'timezone']:
+        if key in server_data:
+            fingerprint_parts.append(f"server_{key}:{server_data[key]}")
+    
+    # System Info
+    system_data = structure.get('System Info', {})
+    for key in ['platform', 'architecture', 'platformVersion', 'model', 
+                'bitness', 'wow64', 'formFactor']:
+        if key in system_data:
+            fingerprint_parts.append(f"sys_{key}:{system_data[key]}")
+    
+    # Browser
+    browser_data = structure.get('Browser', {})
+    for key in ['userAgent', 'vendor', 'browserBrands', 'browserVersion',
+                'cookieEnabled', 'doNotTrack', 'pdfViewerEnabled', 'plugins', 'mimeTypes']:
+        if key in browser_data:
+            fingerprint_parts.append(f"browser_{key}:{browser_data[key]}")
+    
+    # Hardware
+    hardware_data = structure.get('Hardware', {})
+    for key in ['screen', 'cpuCores', 'memoryGB', 'maxTouchPoints',
+                'webglVendor', 'webglRenderer', 'gpuInfo']:
+        if key in hardware_data:
+            fingerprint_parts.append(f"hw_{key}:{hardware_data[key]}")
+    
+    # Localization (кроме timezoneOffset, который может меняться)
+    loc_data = structure.get('Localization', {})
+    for key in ['language', 'languages', 'timezone']:
+        if key in loc_data:
+            fingerprint_parts.append(f"loc_{key}:{loc_data[key]}")
+    
+    # Window Info
+    window_data = structure.get('Window Info', {})
+    if 'windowInfo' in window_data:
+        fingerprint_parts.append(f"window:{window_data['windowInfo']}")
+    
+    # Canvas Fingerprint
+    canvas_data = structure.get('Canvas Fingerprint', {})
+    if 'canvasFingerprint' in canvas_data:
+        fingerprint_parts.append(f"canvas:{canvas_data['canvasFingerprint']}")
+    
+    # Permissions
+    perm_data = structure.get('Permissions', {})
+    if 'permissions' in perm_data:
+        fingerprint_parts.append(f"perms:{perm_data['permissions']}")
+    
+    # Storage
+    storage_data = structure.get('Storage', {})
+    if 'localStorage' in storage_data:
+        fingerprint_parts.append(f"storage:{storage_data['localStorage']}")
+    
+    # Сортируем для консистентности и создаем хеш
+    fingerprint_string = '|'.join(sorted(fingerprint_parts))
+    fingerprint_hash = hashlib.sha256(fingerprint_string.encode('utf-8')).hexdigest()
+    
+    return fingerprint_hash
+
 def validate_content_structure(content):
     """Валидация структуры контента по скелету"""
     try:
@@ -459,6 +534,16 @@ def collect():
         
         enriched_content = '\n'.join(server_block) + '\n' + content
         
+        # Проверка на технический дубликат (игнорируя timestamp и другие изменяющиеся поля)
+        # Используем enriched_content для проверки, так как там уже добавлена секция Server Enriched Data
+        technical_fingerprint = generate_technical_fingerprint(enriched_content)
+        if 'technical_fingerprints' not in reg:
+            reg['technical_fingerprints'] = {}
+        
+        if technical_fingerprint in reg.get('technical_fingerprints', {}):
+            logger.info(f"Technical duplicate detected (same device/data, different timestamp): {technical_fingerprint[:16]}...")
+            return jsonify({'status': 'ok', 'message': 'Duplicate ignored (only timestamp or other non-technical fields changed)'}), 200
+        
         # Валидация финального enriched_content перед отправкой
         is_valid, validation_message = validate_content_structure(enriched_content)
         if not is_valid:
@@ -536,9 +621,12 @@ def collect():
                     reg['sent_hashes'] = {}
                 if 'sent_contents' not in reg:
                     reg['sent_contents'] = []
+                if 'technical_fingerprints' not in reg:
+                    reg['technical_fingerprints'] = {}
 
                 reg['sent_hashes'][content_hash] = datetime.now().isoformat()
                 reg['sent_contents'].append(content)
+                reg['technical_fingerprints'][technical_fingerprint] = datetime.now().isoformat()
 
                 if len(reg['sent_hashes']) > 1000:
                     sorted_hashes = sorted(reg['sent_hashes'].items(), key=lambda x: x[1], reverse=True)
@@ -546,6 +634,10 @@ def collect():
 
                 if len(reg['sent_contents']) > 50:
                     reg['sent_contents'] = reg['sent_contents'][-50:]
+
+                if len(reg['technical_fingerprints']) > 1000:
+                    sorted_fingerprints = sorted(reg['technical_fingerprints'].items(), key=lambda x: x[1], reverse=True)
+                    reg['technical_fingerprints'] = dict(sorted_fingerprints[:1000])
 
                 save_registry(reg)
 
@@ -830,12 +922,13 @@ def reset_registry():
             logger.warning(f"Unauthorized reset-registry attempt from {client_ip}")
             return jsonify({'status': 'error', 'message': 'Unauthorized'}), 401
 
-        # Стираем реестр (hashes и недавние тексты)
+        # Стираем реестр (hashes, недавние тексты и технические fingerprint)
         reg = load_registry()
         reg['sent_hashes'] = {}
         reg['sent_contents'] = []
+        reg['technical_fingerprints'] = {}
         save_registry(reg)
-        logger.info("Registry has been reset: sent_hashes and sent_contents cleared")
+        logger.info("Registry has been reset: sent_hashes, sent_contents and technical_fingerprints cleared")
         return jsonify({'status': 'ok', 'message': 'Registry cleared'}), 200
     except Exception as e:
         logger.error(f"Reset registry error: {e}")
