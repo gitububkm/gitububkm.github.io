@@ -217,55 +217,56 @@ def generate_technical_fingerprint(content):
     server_data = structure.get('Server Enriched Data', {})
     for key in ['client_ip_detected', 'x_forwarded_for', 'remote_addr', 'hostname', 
                 'city', 'region', 'country', 'loc', 'org', 'timezone']:
-        if key in server_data:
-            fingerprint_parts.append(f"server_{key}:{server_data[key]}")
+        value = server_data.get(key, '').strip()
+        # Включаем в fingerprint даже пустые значения для консистентности
+        fingerprint_parts.append(f"server_{key}:{value}")
     
     # System Info
     system_data = structure.get('System Info', {})
     for key in ['platform', 'architecture', 'platformVersion', 'model', 
                 'bitness', 'wow64', 'formFactor']:
-        if key in system_data:
-            fingerprint_parts.append(f"sys_{key}:{system_data[key]}")
+        value = system_data.get(key, '').strip()
+        fingerprint_parts.append(f"sys_{key}:{value}")
     
     # Browser
     browser_data = structure.get('Browser', {})
     for key in ['userAgent', 'vendor', 'browserBrands', 'browserVersion',
                 'cookieEnabled', 'doNotTrack', 'pdfViewerEnabled', 'plugins', 'mimeTypes']:
-        if key in browser_data:
-            fingerprint_parts.append(f"browser_{key}:{browser_data[key]}")
+        value = browser_data.get(key, '').strip()
+        fingerprint_parts.append(f"browser_{key}:{value}")
     
     # Hardware
     hardware_data = structure.get('Hardware', {})
     for key in ['screen', 'cpuCores', 'memoryGB', 'maxTouchPoints',
                 'webglVendor', 'webglRenderer', 'gpuInfo']:
-        if key in hardware_data:
-            fingerprint_parts.append(f"hw_{key}:{hardware_data[key]}")
+        value = hardware_data.get(key, '').strip()
+        fingerprint_parts.append(f"hw_{key}:{value}")
     
     # Localization (кроме timezoneOffset, который может меняться)
     loc_data = structure.get('Localization', {})
     for key in ['language', 'languages', 'timezone']:
-        if key in loc_data:
-            fingerprint_parts.append(f"loc_{key}:{loc_data[key]}")
+        value = loc_data.get(key, '').strip()
+        fingerprint_parts.append(f"loc_{key}:{value}")
     
     # Window Info
     window_data = structure.get('Window Info', {})
-    if 'windowInfo' in window_data:
-        fingerprint_parts.append(f"window:{window_data['windowInfo']}")
+    value = window_data.get('windowInfo', '').strip()
+    fingerprint_parts.append(f"window:{value}")
     
     # Canvas Fingerprint
     canvas_data = structure.get('Canvas Fingerprint', {})
-    if 'canvasFingerprint' in canvas_data:
-        fingerprint_parts.append(f"canvas:{canvas_data['canvasFingerprint']}")
+    value = canvas_data.get('canvasFingerprint', '').strip()
+    fingerprint_parts.append(f"canvas:{value}")
     
     # Permissions
     perm_data = structure.get('Permissions', {})
-    if 'permissions' in perm_data:
-        fingerprint_parts.append(f"perms:{perm_data['permissions']}")
+    value = perm_data.get('permissions', '').strip()
+    fingerprint_parts.append(f"perms:{value}")
     
-    # Storage
-    storage_data = structure.get('Storage', {})
-    if 'localStorage' in storage_data:
-        fingerprint_parts.append(f"storage:{storage_data['localStorage']}")
+    # Storage - НЕ включаем в fingerprint, так как может меняться
+    # storage_data = structure.get('Storage', {})
+    # value = storage_data.get('localStorage', '').strip()
+    # fingerprint_parts.append(f"storage:{value}")
     
     # Сортируем для консистентности и создаем хеш
     fingerprint_string = '|'.join(sorted(fingerprint_parts))
@@ -535,14 +536,21 @@ def collect():
         enriched_content = '\n'.join(server_block) + '\n' + content
         
         # Проверка на технический дубликат (игнорируя timestamp и другие изменяющиеся поля)
-        # Используем enriched_content для проверки, так как там уже добавлена секция Server Enriched Data
+        # Перезагружаем реестр перед проверкой, чтобы убедиться, что у нас актуальные данные
+        reg = load_registry()
         technical_fingerprint = generate_technical_fingerprint(enriched_content)
         if 'technical_fingerprints' not in reg:
             reg['technical_fingerprints'] = {}
         
-        if technical_fingerprint in reg.get('technical_fingerprints', {}):
-            logger.info(f"Technical duplicate detected (same device/data, different timestamp): {technical_fingerprint[:16]}...")
+        existing_fingerprints = reg.get('technical_fingerprints', {})
+        logger.info(f"Technical fingerprint: {technical_fingerprint[:16]}... | Total fingerprints in registry: {len(existing_fingerprints)}")
+        
+        if technical_fingerprint in existing_fingerprints:
+            logger.warning(f"Technical duplicate detected (same device/data, different timestamp): {technical_fingerprint[:16]}...")
+            logger.warning(f"Previous send time: {existing_fingerprints[technical_fingerprint]}")
             return jsonify({'status': 'ok', 'message': 'Duplicate ignored (only timestamp or other non-technical fields changed)'}), 200
+        
+        logger.info(f"New technical fingerprint: {technical_fingerprint[:16]}... (will be saved after successful send)")
         
         # Валидация финального enriched_content перед отправкой
         is_valid, validation_message = validate_content_structure(enriched_content)
