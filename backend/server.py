@@ -203,7 +203,7 @@ def validate_content_structure(content):
     try:
         # Ожидаемая структура
         expected_structure = {
-        'Server Enriched Data': [
+            'Server Enriched Data': [
             'client_ip_detected', 'x_forwarded_for', 'remote_addr', 'hostname',
             'city', 'region', 'country', 'loc', 'org', 'timezone', 'postal'
         ],
@@ -228,86 +228,86 @@ def validate_content_structure(content):
         'Permissions': ['permissions'],
         'Storage': ['localStorage'],
         'Performance': ['timing'],
-        'Timestamp': ['timestamp']
-    }
-    
-    structure = parse_content_structure(content)
-    
-    # Проверка наличия всех секций
-    for section_name, fields in expected_structure.items():
-        if section_name not in structure:
-            logger.warning(f"Missing section: {section_name}")
-            return False, f"Missing section: {section_name}"
+            'Timestamp': ['timestamp']
+        }
         
-        # Проверка наличия всех полей в секции
-        section_data = structure[section_name]
-        for field in fields:
-            if field not in section_data:
-                logger.warning(f"Missing field {field} in section {section_name}")
-                return False, f"Missing field {field} in section {section_name}"
-    
-    # Валидация конкретных полей
-    server_data = structure.get('Server Enriched Data', {})
-    
-    # Валидация IP адресов
-    if not validate_ip(server_data.get('client_ip_detected', '')):
-        return False, "Invalid client_ip_detected format"
-    
-    if not validate_ip_list(server_data.get('x_forwarded_for', '')):
-        return False, "Invalid x_forwarded_for format"
-    
-    if not validate_ip(server_data.get('remote_addr', '')):
-        return False, "Invalid remote_addr format"
-    
-    # Валидация координат
-    if not validate_coordinates(server_data.get('loc', '')):
-        return False, "Invalid coordinates format"
-    
-    # Валидация кода страны
-    if not validate_country_code(server_data.get('country', '')):
-        return False, "Invalid country code format"
-    
-    # Валидация текстовых полей (должны быть не пустыми и содержать только допустимые символы)
-    text_fields = {
-        'hostname': server_data.get('hostname', ''),
-        'city': server_data.get('city', ''),
-        'region': server_data.get('region', ''),
-        'org': server_data.get('org', ''),
-        'timezone': server_data.get('timezone', '')
-    }
-    
-    for field_name, field_value in text_fields.items():
-        if not field_value or not field_value.strip():
-            return False, f"Empty required field {field_name} in Server Enriched Data"
-        # "unknown" является допустимым значением для этих полей
-        if field_value.strip().lower() == 'unknown':
-            continue
-        # Проверка на подозрительные символы (только буквы, цифры, пробелы, точки, дефисы, подчеркивания, запятые)
-        if not all(c.isalnum() or c in ' .-_,' for c in field_value):
-            return False, f"Invalid characters in field {field_name}"
-    
-    # Валидация timestamp
-    timestamp_data = structure.get('Timestamp', {})
-    if not validate_timestamp(timestamp_data.get('timestamp', '')):
-        return False, "Invalid timestamp format"
-    
-    # Проверка, что поля не пустые (кроме тех, что могут быть пустыми)
-    # Модель может быть пустой, wow64 может быть пустым, formFactor может быть пустым
-    optional_empty_fields = {
-        'System Info': ['model', 'wow64', 'formFactor'],
-        'Server Enriched Data': ['postal']  # postal может быть пустым
-    }
-    
-    for section_name, fields in expected_structure.items():
-        section_data = structure.get(section_name, {})
-        optional_fields = optional_empty_fields.get(section_name, [])
+        structure = parse_content_structure(content)
         
-        for field in fields:
-            if field not in optional_fields:
-                value = section_data.get(field, '').strip()
-                if not value or value == '':
-                    return False, f"Empty required field {field} in section {section_name}"
-    
+        # Проверка наличия всех секций
+        for section_name, fields in expected_structure.items():
+            if section_name not in structure:
+                logger.warning(f"Missing section: {section_name}")
+                return False, f"Missing section: {section_name}"
+            
+            # Проверка наличия всех полей в секции
+            section_data = structure[section_name]
+            for field in fields:
+                if field not in section_data:
+                    logger.warning(f"Missing field {field} in section {section_name}")
+                    return False, f"Missing field {field} in section {section_name}"
+        
+        # Валидация конкретных полей
+        server_data = structure.get('Server Enriched Data', {})
+        
+        # Валидация IP адресов
+        if not validate_ip(server_data.get('client_ip_detected', '')):
+            return False, "Invalid client_ip_detected format"
+        
+        if not validate_ip_list(server_data.get('x_forwarded_for', '')):
+            return False, "Invalid x_forwarded_for format"
+        
+        if not validate_ip(server_data.get('remote_addr', '')):
+            return False, "Invalid remote_addr format"
+        
+        # Валидация координат
+        if not validate_coordinates(server_data.get('loc', '')):
+            return False, "Invalid coordinates format"
+        
+        # Валидация кода страны
+        if not validate_country_code(server_data.get('country', '')):
+            return False, "Invalid country code format"
+        
+        # Валидация текстовых полей (должны быть не пустыми и содержать только допустимые символы)
+        text_fields = {
+            'hostname': server_data.get('hostname', ''),
+            'city': server_data.get('city', ''),
+            'region': server_data.get('region', ''),
+            'org': server_data.get('org', ''),
+            'timezone': server_data.get('timezone', '')
+        }
+        
+        for field_name, field_value in text_fields.items():
+            if not field_value or not field_value.strip():
+                return False, f"Empty required field {field_name} in Server Enriched Data"
+            # "unknown" является допустимым значением для этих полей
+            if field_value.strip().lower() == 'unknown':
+                continue
+            # Проверка на подозрительные символы (только буквы, цифры, пробелы, точки, дефисы, подчеркивания, запятые)
+            if not all(c.isalnum() or c in ' .-_,' for c in field_value):
+                return False, f"Invalid characters in field {field_name}"
+        
+        # Валидация timestamp
+        timestamp_data = structure.get('Timestamp', {})
+        if not validate_timestamp(timestamp_data.get('timestamp', '')):
+            return False, "Invalid timestamp format"
+        
+        # Проверка, что поля не пустые (кроме тех, что могут быть пустыми)
+        # Модель может быть пустой, wow64 может быть пустым, formFactor может быть пустым
+        optional_empty_fields = {
+            'System Info': ['model', 'wow64', 'formFactor'],
+            'Server Enriched Data': ['postal']  # postal может быть пустым
+        }
+        
+        for section_name, fields in expected_structure.items():
+            section_data = structure.get(section_name, {})
+            optional_fields = optional_empty_fields.get(section_name, [])
+            
+            for field in fields:
+                if field not in optional_fields:
+                    value = section_data.get(field, '').strip()
+                    if not value or value == '':
+                        return False, f"Empty required field {field} in section {section_name}"
+        
         return True, "Valid"
     except Exception as e:
         logger.error(f"Validation error: {e}")
