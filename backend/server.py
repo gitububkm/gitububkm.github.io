@@ -201,72 +201,57 @@ def parse_content_structure(content):
 def generate_technical_fingerprint(content):
     """Генерация технического fingerprint из данных (без timestamp и других изменяющихся полей)
     
-    Игнорируемые поля (не включаются в fingerprint):
-    - timestamp (Timestamp)
-    - battery (Battery) - уровень батареи меняется
-    - timing (Performance) - может немного отличаться
-    - postal (Server Enriched Data) - может меняться
-    - timezoneOffset (Localization) - может меняться при переходе на летнее время
+    Используются только СТАБИЛЬНЫЕ характеристики устройства, которые не меняются между запросами:
+    - System Info (platform, architecture, model и т.д.)
+    - Browser (userAgent, vendor, plugins и т.д.)
+    - Hardware (screen, cpuCores, memoryGB, webgl и т.д.)
+    - Canvas Fingerprint (уникальный для устройства)
+    
+    Игнорируемые поля (могут меняться между запросами):
+    - Server Enriched Data (IP, геолокация) - может меняться из-за прокси/CDN
+    - Timestamp - всегда разный
+    - Battery - уровень батареи меняется
+    - Performance timing - может отличаться
+    - Window Info - размер окна может меняться
+    - Permissions - могут меняться
+    - Storage - может меняться
+    - timezoneOffset - может меняться
     """
     structure = parse_content_structure(content)
     
-    # Ключевые технические поля для fingerprint
     fingerprint_parts = []
     
-    # Server Enriched Data (кроме postal)
-    server_data = structure.get('Server Enriched Data', {})
-    for key in ['client_ip_detected', 'x_forwarded_for', 'remote_addr', 'hostname', 
-                'city', 'region', 'country', 'loc', 'org', 'timezone']:
-        value = server_data.get(key, '').strip()
-        # Включаем в fingerprint даже пустые значения для консистентности
-        fingerprint_parts.append(f"server_{key}:{value}")
-    
-    # System Info
+    # System Info - стабильные характеристики системы
     system_data = structure.get('System Info', {})
     for key in ['platform', 'architecture', 'platformVersion', 'model', 
                 'bitness', 'wow64', 'formFactor']:
         value = system_data.get(key, '').strip()
         fingerprint_parts.append(f"sys_{key}:{value}")
     
-    # Browser
+    # Browser - стабильные характеристики браузера
     browser_data = structure.get('Browser', {})
     for key in ['userAgent', 'vendor', 'browserBrands', 'browserVersion',
                 'cookieEnabled', 'doNotTrack', 'pdfViewerEnabled', 'plugins', 'mimeTypes']:
         value = browser_data.get(key, '').strip()
         fingerprint_parts.append(f"browser_{key}:{value}")
     
-    # Hardware
+    # Hardware - стабильные характеристики железа
     hardware_data = structure.get('Hardware', {})
     for key in ['screen', 'cpuCores', 'memoryGB', 'maxTouchPoints',
                 'webglVendor', 'webglRenderer', 'gpuInfo']:
         value = hardware_data.get(key, '').strip()
         fingerprint_parts.append(f"hw_{key}:{value}")
     
-    # Localization (кроме timezoneOffset, который может меняться)
+    # Localization - стабильные настройки локализации (кроме timezoneOffset)
     loc_data = structure.get('Localization', {})
     for key in ['language', 'languages', 'timezone']:
         value = loc_data.get(key, '').strip()
         fingerprint_parts.append(f"loc_{key}:{value}")
     
-    # Window Info
-    window_data = structure.get('Window Info', {})
-    value = window_data.get('windowInfo', '').strip()
-    fingerprint_parts.append(f"window:{value}")
-    
-    # Canvas Fingerprint
+    # Canvas Fingerprint - уникальный для устройства
     canvas_data = structure.get('Canvas Fingerprint', {})
     value = canvas_data.get('canvasFingerprint', '').strip()
     fingerprint_parts.append(f"canvas:{value}")
-    
-    # Permissions
-    perm_data = structure.get('Permissions', {})
-    value = perm_data.get('permissions', '').strip()
-    fingerprint_parts.append(f"perms:{value}")
-    
-    # Storage - НЕ включаем в fingerprint, так как может меняться
-    # storage_data = structure.get('Storage', {})
-    # value = storage_data.get('localStorage', '').strip()
-    # fingerprint_parts.append(f"storage:{value}")
     
     # Сортируем для консистентности и создаем хеш
     fingerprint_string = '|'.join(sorted(fingerprint_parts))
@@ -546,11 +531,11 @@ def collect():
         logger.info(f"Technical fingerprint: {technical_fingerprint[:16]}... | Total fingerprints in registry: {len(existing_fingerprints)}")
         
         if technical_fingerprint in existing_fingerprints:
-            logger.warning(f"Technical duplicate detected (same device/data, different timestamp): {technical_fingerprint[:16]}...")
+            logger.warning(f"⚠️ Technical duplicate BLOCKED: {technical_fingerprint[:16]}...")
             logger.warning(f"Previous send time: {existing_fingerprints[technical_fingerprint]}")
             return jsonify({'status': 'ok', 'message': 'Duplicate ignored (only timestamp or other non-technical fields changed)'}), 200
         
-        logger.info(f"New technical fingerprint: {technical_fingerprint[:16]}... (will be saved after successful send)")
+        logger.info(f"✅ New technical fingerprint: {technical_fingerprint[:16]}... (will be saved after successful send)")
         
         # Валидация финального enriched_content перед отправкой
         is_valid, validation_message = validate_content_structure(enriched_content)
