@@ -282,8 +282,12 @@ def validate_content_structure(content):
             # "unknown" является допустимым значением для этих полей
             if field_value.strip().lower() == 'unknown':
                 continue
-            # Проверка на подозрительные символы (только буквы, цифры, пробелы, точки, дефисы, подчеркивания, запятые)
-            if not all(c.isalnum() or c in ' .-_,' for c in field_value):
+            # Проверка на подозрительные символы
+            # Для timezone разрешаем слэш (например, Europe/Amsterdam)
+            allowed_chars = ' .-_,'
+            if field_name == 'timezone':
+                allowed_chars = ' .-_,/'
+            if not all(c.isalnum() or c in allowed_chars for c in field_value):
                 return False, f"Invalid characters in field {field_name}"
         
         # Валидация timestamp
