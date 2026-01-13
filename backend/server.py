@@ -296,9 +296,9 @@ def validate_content_structure(content):
             return False, "Invalid timestamp format"
         
         # Проверка, что поля не пустые (кроме тех, что могут быть пустыми)
-        # Модель может быть пустой, wow64 может быть пустым, formFactor может быть пустым
+        # На мобильных устройствах (особенно iOS) некоторые поля могут быть пустыми
         optional_empty_fields = {
-            'System Info': ['model', 'wow64', 'formFactor'],
+            'System Info': ['model', 'wow64', 'formFactor', 'architecture', 'platformVersion', 'bitness'],
             'Server Enriched Data': ['postal']  # postal может быть пустым
         }
         
