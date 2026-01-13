@@ -116,9 +116,9 @@ def block_automated_tools():
     return None
 
 def validate_ip(ip_str):
-    """Валидация IP адреса (IPv4 или IPv6)"""
+    """Валидация IP адреса (IPv4 или IPv6). Пустая строка считается валидной."""
     if not ip_str or ip_str.strip() == '':
-        return False
+        return True  # Пустое значение допустимо
     import ipaddress
     try:
         ipaddress.ip_address(ip_str.strip())
@@ -127,16 +127,16 @@ def validate_ip(ip_str):
         return False
 
 def validate_ip_list(ip_str):
-    """Валидация списка IP адресов через запятую"""
+    """Валидация списка IP адресов через запятую. Пустая строка считается валидной."""
     if not ip_str or ip_str.strip() == '':
-        return False
+        return True  # Пустое значение допустимо
     ips = [ip.strip() for ip in ip_str.split(',')]
     return all(validate_ip(ip) for ip in ips)
 
 def validate_coordinates(coord_str):
-    """Валидация координат в формате lat,lon"""
+    """Валидация координат в формате lat,lon. Пустая строка считается валидной."""
     if not coord_str or coord_str.strip() == '':
-        return False
+        return True  # Пустое значение допустимо
     try:
         parts = coord_str.strip().split(',')
         if len(parts) != 2:
@@ -147,16 +147,16 @@ def validate_coordinates(coord_str):
         return False
 
 def validate_country_code(code):
-    """Валидация кода страны (2-3 буквы)"""
+    """Валидация кода страны (2-3 буквы). Пустая строка считается валидной."""
     if not code or code.strip() == '':
-        return False
+        return True  # Пустое значение допустимо
     code = code.strip().upper()
     return len(code) in [2, 3] and code.isalpha()
 
 def validate_timestamp(ts_str):
-    """Валидация ISO timestamp"""
+    """Валидация ISO timestamp. Пустая строка считается валидной."""
     if not ts_str or ts_str.strip() == '':
-        return False
+        return True  # Пустое значение допустимо
     try:
         from datetime import datetime
         datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
@@ -246,28 +246,33 @@ def validate_content_structure(content):
                     logger.warning(f"Missing field {field} in section {section_name}")
                     return False, f"Missing field {field} in section {section_name}"
         
-        # Валидация конкретных полей
+        # Валидация конкретных полей (проверяем формат только если поле не пустое)
         server_data = structure.get('Server Enriched Data', {})
         
-        # Валидация IP адресов
-        if not validate_ip(server_data.get('client_ip_detected', '')):
-            return False, "Invalid client_ip_detected format"
+        # Валидация IP адресов (может быть пустым, но если не пустое - должно быть валидным IP)
+        client_ip = server_data.get('client_ip_detected', '').strip()
+        if client_ip and not validate_ip(client_ip):
+            return False, "Invalid client_ip_detected format (must be valid IP address or empty)"
         
-        if not validate_ip_list(server_data.get('x_forwarded_for', '')):
-            return False, "Invalid x_forwarded_for format"
+        x_forwarded_for = server_data.get('x_forwarded_for', '').strip()
+        if x_forwarded_for and not validate_ip_list(x_forwarded_for):
+            return False, "Invalid x_forwarded_for format (must be valid IP addresses separated by commas or empty)"
         
-        if not validate_ip(server_data.get('remote_addr', '')):
-            return False, "Invalid remote_addr format"
+        remote_addr = server_data.get('remote_addr', '').strip()
+        if remote_addr and not validate_ip(remote_addr):
+            return False, "Invalid remote_addr format (must be valid IP address or empty)"
         
-        # Валидация координат
-        if not validate_coordinates(server_data.get('loc', '')):
-            return False, "Invalid coordinates format"
+        # Валидация координат (может быть пустым, но если не пустое - должно быть валидными координатами)
+        loc = server_data.get('loc', '').strip()
+        if loc and not validate_coordinates(loc):
+            return False, "Invalid coordinates format (must be in format 'lat,lon' or empty)"
         
-        # Валидация кода страны
-        if not validate_country_code(server_data.get('country', '')):
-            return False, "Invalid country code format"
+        # Валидация кода страны (может быть пустым, но если не пустое - должно быть валидным кодом)
+        country = server_data.get('country', '').strip()
+        if country and not validate_country_code(country):
+            return False, "Invalid country code format (must be 2-3 letter country code or empty)"
         
-        # Валидация текстовых полей (должны быть не пустыми и содержать только допустимые символы)
+        # Валидация текстовых полей (могут быть пустыми, но если не пустые - должны содержать только допустимые символы)
         text_fields = {
             'hostname': server_data.get('hostname', ''),
             'city': server_data.get('city', ''),
@@ -278,7 +283,7 @@ def validate_content_structure(content):
         
         for field_name, field_value in text_fields.items():
             if not field_value or not field_value.strip():
-                return False, f"Empty required field {field_name} in Server Enriched Data"
+                continue  # Пустое поле допустимо
             # "unknown" является допустимым значением для этих полей
             if field_value.strip().lower() == 'unknown':
                 continue
@@ -288,29 +293,43 @@ def validate_content_structure(content):
             if field_name == 'timezone':
                 allowed_chars = ' .-_,/'
             if not all(c.isalnum() or c in allowed_chars for c in field_value):
-                return False, f"Invalid characters in field {field_name}"
+                return False, f"Invalid characters in field {field_name} (only letters, numbers, spaces, and {allowed_chars} allowed)"
         
-        # Валидация timestamp
+        # Валидация timestamp (может быть пустым, но если не пустое - должно быть валидным timestamp)
         timestamp_data = structure.get('Timestamp', {})
-        if not validate_timestamp(timestamp_data.get('timestamp', '')):
-            return False, "Invalid timestamp format"
+        timestamp = timestamp_data.get('timestamp', '').strip()
+        if timestamp and not validate_timestamp(timestamp):
+            return False, "Invalid timestamp format (must be ISO format or empty)"
         
-        # Проверка, что поля не пустые (кроме тех, что могут быть пустыми)
-        # На мобильных устройствах (особенно iOS) некоторые поля могут быть пустыми
-        optional_empty_fields = {
-            'System Info': ['model', 'wow64', 'formFactor', 'architecture', 'platformVersion', 'bitness'],
-            'Server Enriched Data': ['postal']  # postal может быть пустым
-        }
+        # Все поля могут быть пустыми - проверяем только формат, если поле не пустое
+        # Дополнительная валидация для числовых полей
+        hardware_data = structure.get('Hardware', {})
+        cpu_cores = hardware_data.get('cpuCores', '').strip()
+        if cpu_cores and not (cpu_cores.isdigit() or cpu_cores == 'null'):
+            return False, "Invalid cpuCores format (must be a number or 'null' or empty)"
         
-        for section_name, fields in expected_structure.items():
-            section_data = structure.get(section_name, {})
-            optional_fields = optional_empty_fields.get(section_name, [])
-            
-            for field in fields:
-                if field not in optional_fields:
-                    value = section_data.get(field, '').strip()
-                    if not value or value == '':
-                        return False, f"Empty required field {field} in section {section_name}"
+        max_touch_points = hardware_data.get('maxTouchPoints', '').strip()
+        if max_touch_points and not max_touch_points.isdigit():
+            return False, "Invalid maxTouchPoints format (must be a number or empty)"
+        
+        # Валидация boolean полей
+        browser_data = structure.get('Browser', {})
+        cookie_enabled = browser_data.get('cookieEnabled', '').strip().lower()
+        if cookie_enabled and cookie_enabled not in ['true', 'false', 'yes', 'no', '1', '0']:
+            return False, "Invalid cookieEnabled format (must be true/false/yes/no or empty)"
+        
+        pdf_viewer_enabled = browser_data.get('pdfViewerEnabled', '').strip().lower()
+        if pdf_viewer_enabled and pdf_viewer_enabled not in ['yes', 'no', 'true', 'false', '1', '0']:
+            return False, "Invalid pdfViewerEnabled format (must be yes/no/true/false or empty)"
+        
+        # Валидация timezoneOffset (может быть числом или пустым)
+        localization_data = structure.get('Localization', {})
+        timezone_offset = localization_data.get('timezoneOffset', '').strip()
+        if timezone_offset:
+            try:
+                int(timezone_offset)
+            except ValueError:
+                return False, "Invalid timezoneOffset format (must be a number or empty)"
         
         return True, "Valid"
     except Exception as e:
