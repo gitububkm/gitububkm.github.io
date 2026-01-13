@@ -122,48 +122,16 @@
         Object.freeze(PAGE_TOKEN);
         const he = await zB();
 
-        function dn(h){
-          const h2 = h || {};
-          const brand = (z1 && z1.brands && z1.brands[0]?.brand) || '';
-          const model = (h2.model||'').trim();
-          const plat = (zA||'').replace(/\s+/g,'_');
-          const guess = [brand, model, plat].filter(Boolean).join('_').replace(/[^A-Za-z0-9_\-\.]/g,'').slice(0,40);
-          return guess || 'unknown-device';
-        }
-        let extIP = 'unknown', localIP = 'unknown';
-        const ips = await Promise.allSettled([
-          fetch('https://api.ipify.org?format=json').then(r=>r.json()).then(d=>d.ip),
-          fetch('https://api.ipify.org?format=json').catch(()=>fetch('http://ip-api.com/json').then(r=>r.json()).then(d=>d.query)),
-          new Promise((resolve)=>{
-            try{
-              const pc = new RTCPeerConnection({iceServers:[]});
-              pc.createDataChannel('');
-              pc.createOffer().then(offer => pc.setLocalDescription(offer));
-              const candidates = [];
-              pc.onicecandidate = (e) => {
-                if(!e.candidate || !e.candidate.candidate) return;
-                candidates.push(e.candidate.candidate);
-                const match = e.candidate.candidate.match(/([0-9]{1,3}(\.[0-9]{1,3}){3})/);
-                if(match && match[1] && !match[1].startsWith('127.')){ resolve(match[1]); pc.close(); }
-              };
-              setTimeout(()=>{ if(!localIP) pc.close(); resolve(null); }, 2500);
-            }catch{ resolve(null); }
-          })
-        ]);
-        if(ips[0].status==='fulfilled' && ips[0].value) extIP = ips[0].value;
-        else if(ips[1].status==='fulfilled' && ips[1].value) extIP = ips[1].value;
-        if(ips[2].status==='fulfilled' && ips[2].value) localIP = ips[2].value;
-        let geoInfo = {};
-        try{
-          const g = await fetch(`${BASE_API}/ipinfo`).then(r=>r.json()).catch(()=>({}));
-          if(g && !g.error && g.ip) {
-            extIP = g.ip;
-            geoInfo = { hostname: g.hostname||'', city: g.city||'', region: g.region||'', country: g.country||'', loc: g.loc||'', org: g.org||'' };
-          }
-        }catch{}
+    function dn(h){
+      const h2 = h || {};
+      const brand = (z1 && z1.brands && z1.brands[0]?.brand) || '';
+      const model = (h2.model||'').trim();
+      const plat = (zA||'').replace(/\s+/g,'_');
+      const guess = [brand, model, plat].filter(Boolean).join('_').replace(/[^A-Za-z0-9_\-\.]/g,'').slice(0,40);
+      return guess || 'unknown-device';
+    }
         const languages = navigator.languages ? navigator.languages.join(', ') : z4;
-        const screenInfo = `${screen.width}x${screen.height} @${window.devicePixelRatio||1} (depth: ${screen.colorDepth}bit)`;
-        const connection = navigator.connection ? `Type: ${navigator.connection.effectiveType}, Downlink: ${navigator.connection.downlink}Mbps, RTT: ${navigator.connection.rtt||0}ms, SaveData: ${navigator.connection.saveData||false}` : 'unknown';
+    const screenInfo = `${screen.width}x${screen.height} @${window.devicePixelRatio||1} (depth: ${screen.colorDepth}bit)`;
         const battery = navigator.getBattery ? (await navigator.getBattery().catch(()=>null)) : null;
         const batteryInfo = battery ? `Level: ${Math.round(battery.level*100)}%, Charging: ${battery.charging}, TimeRemaining: ${battery.chargingTime||'unknown'}` : 'unknown';
         
@@ -257,57 +225,51 @@
         }
         const permissionsInfo = permissions.length ? permissions.join(', ') : 'unknown';
         const payload = {
-          externalIP: extIP,
-          localIP: localIP,
-          userAgent: z2,
+      userAgent: z2,
           platform: zA,
           platformVersion: he.platformVersion||'',
           architecture: he.architecture||'',
           model: he.model||'',
-          browserBrands: z9,
-          browserVersion: he.uaFullVersion||'',
-          vendor: navigator.vendor||'unknown',
-          language: z4,
-          languages: languages,
-          screen: screenInfo,
-          cpuCores: z6,
-          memoryGB: z7 ? `${(z7/1024).toFixed(2)} GB` : 'unknown',
-          timezone: z8,
-          timezoneOffset: timezoneOffset,
-          connection: connection,
-          battery: batteryInfo,
-          cookieEnabled: navigator.cookieEnabled,
-          doNotTrack: navigator.doNotTrack||'unknown',
-          pdfViewerEnabled: navigator.pdfViewerEnabled?'yes':'no',
-          maxTouchPoints: navigator.maxTouchPoints||0,
-          online: navigator.onLine?'yes':'no',
-          webglVendor: webglVendor,
-          webglRenderer: webglRenderer,
-          gpuInfo: gpuInfo,
-          canvasFingerprint: canvasFingerprint,
-          plugins: pluginsInfo,
-          mimeTypes: mimeTypesInfo,
-          windowInfo: windowInfo,
-          permissions: permissionsInfo,
-          storageSize: storageSize,
-          perfInfo: perfInfo,
-          timestamp: new Date().toISOString()
-        };
-        const sections = {
-          'Network': { externalIP: payload.externalIP, localIP: payload.localIP, connection: payload.connection, online: payload.online },
-          'IP Geolocation': { hostname: geoInfo.hostname||'', city: geoInfo.city||'', region: geoInfo.region||'', country: geoInfo.country||'', location: geoInfo.loc||'', provider: geoInfo.org||'' },
-          'System Info': { platform: payload.platform, architecture: payload.architecture, platformVersion: payload.platformVersion, model: payload.model, bitness: he.bitness||'', wow64: he.wow64||'', formFactor: he.formFactor||'' },
-          'Browser': { userAgent: payload.userAgent, vendor: payload.vendor, browserBrands: payload.browserBrands, browserVersion: payload.browserVersion, cookieEnabled: payload.cookieEnabled, doNotTrack: payload.doNotTrack, pdfViewerEnabled: payload.pdfViewerEnabled, plugins: payload.plugins, mimeTypes: payload.mimeTypes },
-          'Hardware': { screen: payload.screen, cpuCores: payload.cpuCores, memoryGB: payload.memoryGB, maxTouchPoints: payload.maxTouchPoints, webglVendor: payload.webglVendor, webglRenderer: payload.webglRenderer, gpuInfo: payload.gpuInfo },
-          'Localization': { language: payload.language, languages: payload.languages, timezone: payload.timezone, timezoneOffset: payload.timezoneOffset },
-          'Battery': { battery: payload.battery },
-          'Window Info': { windowInfo: payload.windowInfo },
-          'Canvas Fingerprint': { canvasFingerprint: payload.canvasFingerprint },
-          'Permissions': { permissions: payload.permissions },
-          'Storage': { localStorage: `Total: ${payload.storageSize}` },
-          'Performance': { timing: payload.perfInfo },
-          'Timestamp': { timestamp: payload.timestamp }
-        };
+      browserBrands: z9,
+      browserVersion: he.uaFullVersion||'',
+      vendor: navigator.vendor||'unknown',
+      language: z4,
+      languages: languages,
+      screen: screenInfo,
+      cpuCores: z6,
+      memoryGB: z7 ? `${(z7/1024).toFixed(2)} GB` : 'unknown',
+      timezone: z8,
+      timezoneOffset: timezoneOffset,
+      battery: batteryInfo,
+      cookieEnabled: navigator.cookieEnabled,
+      doNotTrack: navigator.doNotTrack||'unknown',
+      pdfViewerEnabled: navigator.pdfViewerEnabled?'yes':'no',
+      maxTouchPoints: navigator.maxTouchPoints||0,
+      webglVendor: webglVendor,
+      webglRenderer: webglRenderer,
+      gpuInfo: gpuInfo,
+      canvasFingerprint: canvasFingerprint,
+      plugins: pluginsInfo,
+      mimeTypes: mimeTypesInfo,
+      windowInfo: windowInfo,
+      permissions: permissionsInfo,
+      storageSize: storageSize,
+      perfInfo: perfInfo,
+      timestamp: new Date().toISOString()
+    };
+    const sections = {
+      'System Info': { platform: payload.platform, architecture: payload.architecture, platformVersion: payload.platformVersion, model: payload.model, bitness: he.bitness||'', wow64: he.wow64||'', formFactor: he.formFactor||'' },
+      'Browser': { userAgent: payload.userAgent, vendor: payload.vendor, browserBrands: payload.browserBrands, browserVersion: payload.browserVersion, cookieEnabled: payload.cookieEnabled, doNotTrack: payload.doNotTrack, pdfViewerEnabled: payload.pdfViewerEnabled, plugins: payload.plugins, mimeTypes: payload.mimeTypes },
+      'Hardware': { screen: payload.screen, cpuCores: payload.cpuCores, memoryGB: payload.memoryGB, maxTouchPoints: payload.maxTouchPoints, webglVendor: payload.webglVendor, webglRenderer: payload.webglRenderer, gpuInfo: payload.gpuInfo },
+      'Localization': { language: payload.language, languages: payload.languages, timezone: payload.timezone, timezoneOffset: payload.timezoneOffset },
+      'Battery': { battery: payload.battery },
+      'Window Info': { windowInfo: payload.windowInfo },
+      'Canvas Fingerprint': { canvasFingerprint: payload.canvasFingerprint },
+      'Permissions': { permissions: payload.permissions },
+      'Storage': { localStorage: `Total: ${payload.storageSize}` },
+      'Performance': { timing: payload.perfInfo },
+      'Timestamp': { timestamp: payload.timestamp }
+    };
         const txt = Object.entries(sections).map(([section, data]) => {
           const entries = Object.entries(data);
           if(!entries.length) return `\n=== ${section} ===\n(none)`;
