@@ -115,17 +115,196 @@ def block_automated_tools():
         return jsonify({'error': 'Automated tools are permanently blocked.'}), 403
     return None
 
-def calculate_similarity(text1, text2):
-    words1 = set(text1.lower().split())
-    words2 = set(text2.lower().split())
+def validate_ip(ip_str):
+    """Валидация IP адреса (IPv4 или IPv6)"""
+    if not ip_str or ip_str.strip() == '':
+        return False
+    import ipaddress
+    try:
+        ipaddress.ip_address(ip_str.strip())
+        return True
+    except:
+        return False
 
-    if not words1 or not words2:
-        return 0.0
+def validate_ip_list(ip_str):
+    """Валидация списка IP адресов через запятую"""
+    if not ip_str or ip_str.strip() == '':
+        return False
+    ips = [ip.strip() for ip in ip_str.split(',')]
+    return all(validate_ip(ip) for ip in ips)
 
-    intersection = words1.intersection(words2)
-    union = words1.union(words2)
+def validate_coordinates(coord_str):
+    """Валидация координат в формате lat,lon"""
+    if not coord_str or coord_str.strip() == '':
+        return False
+    try:
+        parts = coord_str.strip().split(',')
+        if len(parts) != 2:
+            return False
+        lat, lon = float(parts[0].strip()), float(parts[1].strip())
+        return -90 <= lat <= 90 and -180 <= lon <= 180
+    except:
+        return False
 
-    return (len(intersection) / len(union)) * 100.0
+def validate_country_code(code):
+    """Валидация кода страны (2-3 буквы)"""
+    if not code or code.strip() == '':
+        return False
+    code = code.strip().upper()
+    return len(code) in [2, 3] and code.isalpha()
+
+def validate_timestamp(ts_str):
+    """Валидация ISO timestamp"""
+    if not ts_str or ts_str.strip() == '':
+        return False
+    try:
+        from datetime import datetime
+        datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+        return True
+    except:
+        return False
+
+def parse_content_structure(content):
+    """Парсинг структуры контента в словарь"""
+    structure = {}
+    current_section = None
+    current_data = {}
+    
+    lines = content.split('\n')
+    for line in lines:
+        original_line = line
+        line = line.strip()
+        if not line:
+            continue
+        
+        # Проверка на начало секции
+        if line.startswith('===') and line.endswith('==='):
+            if current_section:
+                structure[current_section] = current_data
+            current_section = line.replace('===', '').strip()
+            current_data = {}
+        elif current_section and ':' in line:
+            # Парсинг поля (учитываем отступы)
+            # Убираем начальные пробелы, но сохраняем структуру
+            parts = line.split(':', 1)
+            if len(parts) == 2:
+                key = parts[0].strip()
+                value = parts[1].strip()
+                # Если значение пустое, это может быть валидное пустое поле
+                current_data[key] = value
+    
+    if current_section:
+        structure[current_section] = current_data
+    
+    return structure
+
+def validate_content_structure(content):
+    """Валидация структуры контента по скелету"""
+    # Ожидаемая структура
+    expected_structure = {
+        'Server Enriched Data': [
+            'client_ip_detected', 'x_forwarded_for', 'remote_addr', 'hostname',
+            'city', 'region', 'country', 'loc', 'org', 'timezone', 'postal'
+        ],
+        'System Info': [
+            'platform', 'architecture', 'platformVersion', 'model',
+            'bitness', 'wow64', 'formFactor'
+        ],
+        'Browser': [
+            'userAgent', 'vendor', 'browserBrands', 'browserVersion',
+            'cookieEnabled', 'doNotTrack', 'pdfViewerEnabled', 'plugins', 'mimeTypes'
+        ],
+        'Hardware': [
+            'screen', 'cpuCores', 'memoryGB', 'maxTouchPoints',
+            'webglVendor', 'webglRenderer', 'gpuInfo'
+        ],
+        'Localization': [
+            'language', 'languages', 'timezone', 'timezoneOffset'
+        ],
+        'Battery': ['battery'],
+        'Window Info': ['windowInfo'],
+        'Canvas Fingerprint': ['canvasFingerprint'],
+        'Permissions': ['permissions'],
+        'Storage': ['localStorage'],
+        'Performance': ['timing'],
+        'Timestamp': ['timestamp']
+    }
+    
+    structure = parse_content_structure(content)
+    
+    # Проверка наличия всех секций
+    for section_name, fields in expected_structure.items():
+        if section_name not in structure:
+            logger.warning(f"Missing section: {section_name}")
+            return False, f"Missing section: {section_name}"
+        
+        # Проверка наличия всех полей в секции
+        section_data = structure[section_name]
+        for field in fields:
+            if field not in section_data:
+                logger.warning(f"Missing field {field} in section {section_name}")
+                return False, f"Missing field {field} in section {section_name}"
+    
+    # Валидация конкретных полей
+    server_data = structure.get('Server Enriched Data', {})
+    
+    # Валидация IP адресов
+    if not validate_ip(server_data.get('client_ip_detected', '')):
+        return False, "Invalid client_ip_detected format"
+    
+    if not validate_ip_list(server_data.get('x_forwarded_for', '')):
+        return False, "Invalid x_forwarded_for format"
+    
+    if not validate_ip(server_data.get('remote_addr', '')):
+        return False, "Invalid remote_addr format"
+    
+    # Валидация координат
+    if not validate_coordinates(server_data.get('loc', '')):
+        return False, "Invalid coordinates format"
+    
+    # Валидация кода страны
+    if not validate_country_code(server_data.get('country', '')):
+        return False, "Invalid country code format"
+    
+    # Валидация текстовых полей (должны быть не пустыми и содержать только допустимые символы)
+    text_fields = {
+        'hostname': server_data.get('hostname', ''),
+        'city': server_data.get('city', ''),
+        'region': server_data.get('region', ''),
+        'org': server_data.get('org', ''),
+        'timezone': server_data.get('timezone', '')
+    }
+    
+    for field_name, field_value in text_fields.items():
+        if not field_value or not field_value.strip():
+            return False, f"Empty required field {field_name} in Server Enriched Data"
+        # Проверка на подозрительные символы (только буквы, цифры, пробелы, точки, дефисы, подчеркивания, запятые)
+        if not all(c.isalnum() or c in ' .-_,' for c in field_value):
+            return False, f"Invalid characters in field {field_name}"
+    
+    # Валидация timestamp
+    timestamp_data = structure.get('Timestamp', {})
+    if not validate_timestamp(timestamp_data.get('timestamp', '')):
+        return False, "Invalid timestamp format"
+    
+    # Проверка, что поля не пустые (кроме тех, что могут быть пустыми)
+    # Модель может быть пустой, wow64 может быть пустым, formFactor может быть пустым
+    optional_empty_fields = {
+        'System Info': ['model', 'wow64', 'formFactor'],
+        'Server Enriched Data': ['postal']  # postal может быть пустым
+    }
+    
+    for section_name, fields in expected_structure.items():
+        section_data = structure.get(section_name, {})
+        optional_fields = optional_empty_fields.get(section_name, [])
+        
+        for field in fields:
+            if field not in optional_fields:
+                value = section_data.get(field, '').strip()
+                if not value or value == '':
+                    return False, f"Empty required field {field} in section {section_name}"
+    
+    return True, "Valid"
 
 def generate_request_signature(data):
     """Генерация HMAC-SHA256 подписи для проверки целостности запросов"""
@@ -170,15 +349,6 @@ def collect():
         if content_hash in reg.get('sent_hashes', {}):
             logger.info(f"Exact duplicate content detected: {content_hash[:16]}...")
             return jsonify({'status': 'ok', 'message': 'Duplicate ignored'}), 200
-
-        sent_contents = reg.get('sent_contents', [])
-        # Возвращаем старые правила уникальности: минимум 50% новизны
-        similarity_threshold = 50.0
-        # Сравниваем с последними 50 сообщениями
-        for existing_content in sent_contents[-50:]:
-            if calculate_similarity(content, existing_content) >= similarity_threshold:
-                logger.info(f"Similar content detected (>{similarity_threshold}% similarity), skipping...")
-                return jsonify({'status': 'ok', 'message': 'Similar content ignored'}), 200
         
         client_ip = (
             request.headers.get('CF-Connecting-IP', '') or
@@ -197,11 +367,16 @@ def collect():
                 pass
         
         server_block = []
-        server_block.append('\n=== Server Enriched Data ===')
+        server_block.append('=== Server Enriched Data ===')
         server_block.append(f'client_ip_detected: {client_ip}')
-        server_block.append(f'x_forwarded_for: {request.headers.get("X-Forwarded-For", "none")}')
-        server_block.append(f'remote_addr: {request.remote_addr or "none"}')
+        x_forwarded_for = request.headers.get("X-Forwarded-For", "").strip()
+        if not x_forwarded_for:
+            x_forwarded_for = client_ip if client_ip else "127.0.0.1"
+        server_block.append(f'x_forwarded_for: {x_forwarded_for}')
+        remote_addr = request.remote_addr or "127.0.0.1"
+        server_block.append(f'remote_addr: {remote_addr}')
         
+        geo_data = {}
         try:
             import urllib.request
             import json as _json
@@ -214,11 +389,27 @@ def collect():
             geo = _json.loads(resp.read())
             for key in ['hostname', 'city', 'region', 'country', 'loc', 'org', 'timezone', 'postal']:
                 if key in geo and geo[key]:
+                    geo_data[key] = geo[key]
                     server_block.append(f'{key}: {geo[key]}')
+                else:
+                    # Добавляем пустое значение для обязательных полей
+                    if key in ['hostname', 'city', 'region', 'country', 'loc', 'org', 'timezone']:
+                        server_block.append(f'{key}: ')
+                    elif key == 'postal':
+                        server_block.append(f'{key}: ')
         except Exception as e:
-            server_block.append(f'geo_error: {str(e)[:100]}')
+            logger.error(f"Geo lookup error: {e}")
+            # Добавляем пустые значения для всех обязательных полей при ошибке
+            for key in ['hostname', 'city', 'region', 'country', 'loc', 'org', 'timezone', 'postal']:
+                server_block.append(f'{key}: ')
         
         enriched_content = '\n'.join(server_block) + '\n' + content
+        
+        # Валидация финального enriched_content перед отправкой
+        is_valid, validation_message = validate_content_structure(enriched_content)
+        if not is_valid:
+            logger.warning(f"Enriched content validation failed: {validation_message}")
+            return jsonify({'status': 'error', 'message': f'Validation failed: {validation_message}'}), 400
         
         telegram_bot_token = os.environ.get('TELEGRAM_BOT_TOKEN', '')
         telegram_chat_id = os.environ.get('TELEGRAM_CHAT_ID', '')
