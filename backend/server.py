@@ -350,7 +350,7 @@ def verify_request_integrity(data, provided_signature):
     return hmac.compare_digest(provided_signature, expected_signature)
 
 @app.route('/collect', methods=['POST'])
-@rate_limit(max_attempts=5, window_seconds=300)
+@rate_limit(max_attempts=3, window_seconds=400)
 def collect():
     try:
         block_result = block_automated_tools()
