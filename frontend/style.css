@@ -88,7 +88,8 @@
 
     .card .img {
       width: clamp(220px, 40vw, 360px);
-      aspect-ratio: 4 / 3;
+      min-height: 200px;
+      max-height: 500px;
       border-radius: 28px;
       margin: 16px auto 12px;
 
@@ -101,6 +102,9 @@
       transition: transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .35s ease;
 
       background-image: none;
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
     }
     .card:hover .img { transform: translateY(-6px) scale(1.02); }
 

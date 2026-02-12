@@ -104,6 +104,14 @@
           tried.push(url);
           const img = new Image();
           img.onload = () => {
+            // Вычисляем естественное соотношение сторон изображения
+            const naturalAspect = img.naturalWidth / img.naturalHeight;
+            // Устанавливаем высоту контейнера на основе ширины и соотношения сторон
+            const containerWidth = el.offsetWidth || parseInt(getComputedStyle(el).width);
+            const calculatedHeight = containerWidth / naturalAspect;
+            // Ограничиваем высоту разумными пределами
+            const finalHeight = Math.max(200, Math.min(500, calculatedHeight));
+            el.style.height = `${finalHeight}px`;
             el.style.background = `center / contain no-repeat url("${url}"), linear-gradient(${BG}, ${BG})`;
             el.style.setProperty('--img-bg', BG);
             el.setAttribute('aria-label', base);
