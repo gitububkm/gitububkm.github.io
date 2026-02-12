@@ -88,8 +88,8 @@
 
     .card .img {
       width: clamp(220px, 40vw, 360px);
+      height: auto;
       min-height: 200px;
-      max-height: 500px;
       border-radius: 28px;
       margin: 16px auto 12px;
 

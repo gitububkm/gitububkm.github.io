@@ -91,30 +91,53 @@
     (function () {
       const exts = ['webp','jpg','png','jpeg','WEBP','JPG','PNG','JPEG'];
       const BG = '#162634';
+      
+      function updateImageSize(el, img, url) {
+        const naturalAspect = img.naturalWidth / img.naturalHeight;
+        // Получаем актуальную ширину контейнера
+        const containerWidth = el.offsetWidth || 
+                               parseInt(getComputedStyle(el).width) || 
+                               Math.min(360, window.innerWidth * 0.4);
+        // Вычисляем высоту на основе естественного соотношения сторон
+        const calculatedHeight = containerWidth / naturalAspect;
+        // Устанавливаем высоту без ограничений, чтобы изображение не обрезалось
+        el.style.height = `${calculatedHeight}px`;
+        el.style.background = `center / contain no-repeat url("${url}"), linear-gradient(${BG}, ${BG})`;
+        el.style.setProperty('--img-bg', BG);
+        el.setAttribute('aria-label', el.getAttribute('data-proj') || el.closest('.card')?.querySelector('h2')?.textContent || '');
+      }
+      
       document.querySelectorAll('.card .img').forEach(el => {
         const base = (el.getAttribute('data-proj') || el.closest('.card')?.querySelector('h2')?.textContent)?.trim();
         if (!base) return;
         let tried = [];
+        let loadedImg = null;
+        let loadedUrl = null;
+        
         (function tryLoad(i){
           if (i >= exts.length) {
             el.style.background = `linear-gradient(${BG}, ${BG})`;
             return;
           }
-      const url = `../assets/${encodeURIComponent(base)}.${exts[i]}`;
+          const url = `../assets/${encodeURIComponent(base)}.${exts[i]}`;
           tried.push(url);
           const img = new Image();
           img.onload = () => {
-            // Вычисляем естественное соотношение сторон изображения
-            const naturalAspect = img.naturalWidth / img.naturalHeight;
-            // Устанавливаем высоту контейнера на основе ширины и соотношения сторон
-            const containerWidth = el.offsetWidth || parseInt(getComputedStyle(el).width);
-            const calculatedHeight = containerWidth / naturalAspect;
-            // Ограничиваем высоту разумными пределами
-            const finalHeight = Math.max(200, Math.min(500, calculatedHeight));
-            el.style.height = `${finalHeight}px`;
-            el.style.background = `center / contain no-repeat url("${url}"), linear-gradient(${BG}, ${BG})`;
-            el.style.setProperty('--img-bg', BG);
-            el.setAttribute('aria-label', base);
+            loadedImg = img;
+            loadedUrl = url;
+            // Используем requestAnimationFrame для точного вычисления размеров
+            requestAnimationFrame(() => {
+              updateImageSize(el, img, url);
+            });
+            // Также обновляем при изменении размера окна
+            const resizeHandler = () => {
+              if (loadedImg && loadedUrl) {
+                updateImageSize(el, loadedImg, loadedUrl);
+              }
+            };
+            window.addEventListener('resize', resizeHandler);
+            // Сохраняем обработчик для возможной очистки
+            el._resizeHandler = resizeHandler;
           };
           img.onerror = () => tryLoad(i + 1);
           img.src = url;
